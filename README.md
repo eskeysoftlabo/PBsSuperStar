@@ -4,7 +4,7 @@ Puts your character's equipment, detailed statistics, Champion Points and skills
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.2.2 (API 101050)
+- **Version:** 0.2.3 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
@@ -34,6 +34,10 @@ This is those three menus on one screen, kept live while you look at it.
 - **Champion Points** — twelve slots, spent and unspent points per constellation, and per star
   the points invested, the cap and the description, distinguishing slotted, unslotted, passive
   and inactive.
+- **Class Mastery** — the Class Mastery passives you have bought, with their ranks, and the
+  class mastery points they are bought with. These are a separate currency from skill points,
+  and the game reports their skill lines as undiscovered until a class line reaches max rank,
+  so they are listed whatever the client says about discovery.
 - **Skills** — six slots on each bar plus whatever special bar is in use, your active,
   ultimate and passive abilities, line rank, skill rank and unspent points. Scribing skills are
   listed too.
@@ -81,6 +85,19 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.2.3: nothing cut off at the bottom
+
+The description pane at the foot of the screen is now sized to a whole number of text lines —
+its height is `GetFontHeight() * 3` rather than a fixed 40 — so a description never ends in a
+half-drawn line. The controls hint moved up onto the description's title row, off the window's
+bottom edge, and the window itself sits higher with more room beneath it so the game's keybind
+strip cannot cover the last row.
+
+The Magicka, Health and Stamina rows are three right-aligned columns of their own instead of
+one string padded with spaces, which could not line up in a proportional font once スタミナ was
+wider than the other two labels. The Champion Point groups and the active effects were tightened
+to make room for the Class Mastery block described above.
 
 ## 0.2.2: less work at load time
 
@@ -142,7 +159,9 @@ On-device checklist, still to be completed:
   and CP spending
 - no errors with unearned CP, empty slots, unearned skills, Scribing, subclassing, or a
   transform bar
-- equipment, attributes, CP and skills match the game's own screens
+- equipment, attributes, CP, Class Mastery and skills match the game's own screens
+- at 720p and with the largest UI scale, the description pane's last line and the controls hint are
+  fully drawn and clear of the keybind strip
 - back returns to the menu, and nothing keeps polling or capturing input after it closes
 
 ---

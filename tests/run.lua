@@ -78,10 +78,15 @@ function GetSlotTexture() return "skill.dds" end
 function GetCraftedAbilityDescription(id) return "crafted " .. id end
 function GetAvailableSkillPoints() return 12 end
 function GetNumSkillTypes() return 1 end
-function GetNumSkillLines() return 1 end
-function GetSkillLineId() return 42 end
-function GetSkillLineNameById() return "Class line" end
-function GetSkillLineDynamicInfo() return 50, false, true, true end
+function GetNumSkillLines() return 2 end
+function GetSkillLineId(_, l) return l == 1 and 42 or 43 end
+function GetSkillLineNameById(id) return id == 43 and "Class mastery" or "Class line" end
+-- Line 2 is a Class Mastery line: undiscovered, as the client reports them before max rank.
+function GetSkillLineDynamicInfo(_, l)
+    if l == 2 then return 4, false, true, false, false, false, true end
+    return 50, false, true, true
+end
+function GetNumClassMasteryPointsBySkillLineId(id) eq(id, 43); return 5 end
 function GetNumSkillAbilities() return 3 end
 function GetSkillAbilityInfo(_, _, index) return "Skill " .. index, "skill.dds", 1, index == 2, false, index < 3, nil, 2 end
 function GetSkillAbilityId(_, _, index) return 300 + index end
@@ -127,6 +132,11 @@ eq(find(skills, "bar1:3").detail, "crafted 222")
 contains(find(skills, "skill1:1:2").detail, "パッシブ")
 eq(find(skills, "skill1:1:3"), nil)
 eq(find(D.Skills(true), "skill1:1:3").value, "未取得")
+contains(find(skills, "line43").name, "クラスマスタリー")
+eq(#skills.mastery, 2, "purchased class mastery passives")
+eq(skills.mastery.lines, 1)
+eq(skills.mastery.points, 5)
+eq(skills.mastery[1].name, "Skill 1")
 local original = D.Equipment
 D.Equipment = function() error("test API failure") end
 local failed = D.Collect(false)
@@ -138,6 +148,7 @@ D.Equipment = original
 -- UI controls fail on unknown methods, catching typos rather than absorbing them.
 local Control = {}
 for _, method in ipairs({"SetAnchor", "SetFont", "SetColor", "SetHorizontalAlignment", "SetMaxLineCount", "SetWrapMode", "SetCenterColor", "SetEdgeColor", "SetTexture"}) do Control[method] = function() end end
+function Control:GetFontHeight() return 26 end
 function Control:SetDimensions(w, h) self.width, self.height = w, h end
 function Control:GetDimensions() return self.width, self.height end
 function Control:SetWidth(w) self.width = w end
@@ -166,13 +177,19 @@ eq(#U.champion[1].slots, 4)
 contains(U.champion[1].slots[1].text, "Star 201")
 eq(U.gear[1].name.text, "Test helm")
 contains(U.effects[1].name.text, "ムンダス")
+eq(#U.mastery, 4)
+contains(U.mastery[1].text, "Skill 1")
+contains(U.masteryTitle.text, "取得 2")
+contains(U.masteryTitle.text, "ポイント 5")
+eq(U.resources[2].max.text, "30000", "resource columns are separate controls")
+eq(U.detailScroll.height % 26, 0, "description height must be whole lines")
 U:MoveColumn(-1); eq(U.column, 4)
 U:MoveColumn(1); eq(U.column, 1)
 U:MoveRow(-100); eq(U.selected[1], 1)
 U:MoveRow(1000); eq(U.selected[1], #U.data[1])
 U:MoveColumn(2); U:MoveRow(1000)
 eq(U.offsets[3], #U.data[3] - U:PageSize(3))
-U:ScrollDetail(10000); eq(U.detailScroll:GetVerticalScroll(), 160)
+U:ScrollDetail(10000); eq(U.detailScroll:GetVerticalScroll(), 200 - U.detailScroll:GetHeight())
 U:ScrollDetail(-10000); eq(U.detailScroll:GetVerticalScroll(), 0)
 local selectedKey = U.data[3][U.selected[3]].key
 U:Refresh(); eq(U.data[3][U.selected[3]].key, selectedKey)

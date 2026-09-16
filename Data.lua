@@ -16,6 +16,11 @@ end
 local function number(value)
     return value and tostring(zo_round(value)) or "—"
 end
+-- Subclassing (API 101046 and later). Older clients have neither the points nor the function.
+local function masteryPoints(lineId)
+    if not GetNumClassMasteryPointsBySkillLineId then return 0 end
+    return GetNumClassMasteryPointsBySkillLineId(lineId) or 0
+end
 D.Number = number
 
 function D.Equipment()
@@ -169,11 +174,19 @@ function D.Skills(showAll)
         end
     end
     header(rows, "points", "スキルポイント：未使用 " .. GetAvailableSkillPoints())
+    local mastery = {points = 0, lines = 0}
+    rows.mastery = mastery
     for t = 1, GetNumSkillTypes() do
         for l = 1, GetNumSkillLines(t) do
             local lineId = GetSkillLineId(t, l)
-            local rank, _, activeLine, discovered = GetSkillLineDynamicInfo(t, l)
-            if discovered or showAll then
+            local rank, _, activeLine, discovered, _, _, classMastery = GetSkillLineDynamicInfo(t, l)
+            -- Class Mastery lines are bought with their own points, and the client reports them
+            -- as undiscovered until a class line is at max rank; keep them listed regardless.
+            if classMastery then
+                mastery.lines = mastery.lines + 1
+                mastery.points = mastery.points + masteryPoints(lineId)
+            end
+            if discovered or showAll or classMastery then
                 local entries = {}
                 for s = 1, GetNumSkillAbilities(t, l) do
                     local name, icon, _, passive, ultimate, purchased, _, abilityRank = GetSkillAbilityInfo(t, l, s)
@@ -184,10 +197,14 @@ function D.Skills(showAll)
                         else description = GetAbilityDescription(id) end
                         local kind = passive and "パッシブ" or (ultimate and "ULT" or "アクティブ")
                         row(entries, "skill" .. t .. ":" .. l .. ":" .. s, name, purchased and ("R" .. abilityRank) or "未取得", kind .. (activeLine and "" or " / ライン非アクティブ") .. "\n" .. description, icon)
+                        if classMastery and purchased then
+                            mastery[#mastery + 1] = {name = clean(name), rank = abilityRank, icon = icon, line = clean(GetSkillLineNameById(lineId))}
+                        end
                     end
                 end
                 if #entries > 0 then
-                    header(rows, "line" .. lineId, clean(GetSkillLineNameById(lineId)) .. "  R" .. rank .. (activeLine and "" or "（非アクティブ）"))
+                    header(rows, "line" .. lineId, clean(GetSkillLineNameById(lineId)) .. "  R" .. rank ..
+                        (classMastery and "（クラスマスタリー）" or "") .. (activeLine and "" or "（非アクティブ）"))
                     for _, entry in ipairs(entries) do rows[#rows + 1] = entry end
                 end
             end

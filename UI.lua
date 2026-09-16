@@ -1,7 +1,7 @@
 local P = PBsSuperStar
 P.UI = { column = 1, selected = {1, 1, 1, 1}, offsets = {0, 0, 0, 0}, showAll = false }
 local U = P.UI
-local W, H = 1800, 1000
+local W, H = 1800, 1040
 local GOLD = {0.88, 0.78, 0.48, 1}
 local WHITE = {0.92, 0.92, 0.88, 1}
 local MUTED = {0.62, 0.65, 0.69, 1}
@@ -51,7 +51,8 @@ function U:PageSize(column) return column == 1 and 14 or 5 end
 function U:Resize()
     if not self.root then return end
     local width, height = GuiRoot:GetDimensions()
-    self.root:SetScale(math.min(width / (W + 100), height / (H + 100)))
+    -- The extra vertical padding keeps the bottom rows clear of the keybind strip.
+    self.root:SetScale(math.min(width / (W + 100), height / (H + 140)))
 end
 
 function U:BuildTasks()
@@ -63,7 +64,7 @@ function U:BuildTasks()
         root = WINDOW_MANAGER:CreateTopLevelWindow("PBsSuperStarWindow")
         self.root = root
         root:SetDimensions(W, H)
-        root:SetAnchor(CENTER, GuiRoot, CENTER, 0, -12)
+        root:SetAnchor(CENTER, GuiRoot, CENTER, 0, -34)
         root:SetHidden(true)
         -- A continuous translucent sheet, like SuperStar, instead of four boxed panels.
         background(root, 0, 0, W, H, 0.025, 0.035, 0.07, 0.9)
@@ -88,15 +89,27 @@ function U:BuildTasks()
     end)
     task(function()
         self.resources = {}
+        -- Right-aligned columns; a single spaced string cannot line up in a proportional font.
+        local columns = {{"spent", 200, 62, "配分"}, {"max", 272, 110, "最大値"}, {"regen", 392, 120, "戦闘中の再生"}}
+        for _, column in ipairs(columns) do
+            local head = line(root, column[2], 169, column[3], 20, 16)
+            head:SetText(column[4])
+            head:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
+            head:SetColor(unpack(MUTED))
+        end
         for i, resource in ipairs({{"magicka", "マジカ", BLUE}, {"health", "体力", RED}, {"stamina", "スタミナ", GREEN}}) do
             local y = 188 + (i - 1) * 39
             local img = texture(root, 44, y, 31)
             img:SetTexture("EsoUI/Art/CharacterWindow/Gamepad/gp_characterSheet_" .. resource[1] .. "Icon.dds")
-            local name = line(root, 83, y, 98, 32, 23)
+            local name = line(root, 83, y, 112, 32, 23)
             name:SetText(resource[2]); name:SetColor(unpack(resource[3]))
-            self.resources[i] = line(root, 178, y, 450, 32, 24)
+            local values = {}
+            for _, column in ipairs(columns) do
+                values[column[1]] = line(root, column[2], y, column[3], 32, 24)
+                values[column[1]]:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
+            end
+            self.resources[i] = values
         end
-        line(root, 180, 169, 450, 20, 16):SetText("配分      最大値          戦闘中の再生")
 
     end)
     task(function()
@@ -165,51 +178,66 @@ function U:BuildTasks()
         local groupIndex = n
         task(function()
             local n = groupIndex
-            local y = 215 + (n - 1) * 109
+            local y = 212 + (n - 1) * 96
             local group = {slots = {}}
-            group.title = line(root, 1142, y, 616, 32, 26)
-            background(root, 1142, y + 33, 615, 1, 0.65, 0.67, 0.73, 0.3)
+            group.title = line(root, 1142, y, 616, 29, 25)
+            background(root, 1142, y + 30, 615, 1, 0.65, 0.67, 0.73, 0.3)
             for s = 1, 4 do
                 local x = 1142 + ((s - 1) % 2) * 316
-                local sy = y + 41 + math.floor((s - 1) / 2) * 28
-                group.slots[s] = line(root, x, sy, 302, 26, 20)
+                local sy = y + 37 + math.floor((s - 1) / 2) * 25
+                group.slots[s] = line(root, x, sy, 302, 24, 20)
             end
             self.champion[n] = group
         end)
     end
 
     task(function()
-        self.effectsTitle = line(root, 1142, 552, 615, 29, 23)
+        self.masteryTitle = line(root, 1142, 498, 615, 28, 23)
+        background(root, 1142, 528, 615, 1, 0.65, 0.67, 0.73, 0.3)
+        self.mastery = {}
+        for s = 1, 4 do
+            local x = 1142 + ((s - 1) % 2) * 316
+            local y = 534 + math.floor((s - 1) / 2) * 25
+            self.mastery[s] = line(root, x, y, 302, 24, 20)
+        end
+    end)
+    task(function()
+        self.effectsTitle = line(root, 1142, 592, 615, 27, 22)
         self.effectsTitle:SetText("ムンダス・食事・有効な効果")
         self.effects = {}
         for n = 1, 3 do
-            local y = 588 + (n - 1) * 27
-            self.effects[n] = {icon = texture(root, 1142, y, 24), name = line(root, 1176, y, 581, 26, 21)}
+            local y = 621 + (n - 1) * 25
+            self.effects[n] = {icon = texture(root, 1142, y, 23), name = line(root, 1176, y, 581, 24, 20)}
         end
 
     end)
     task(function()
-        self.inspectTitle = line(root, 1142, 678, 615, 30, 23)
-        background(root, 1142, 711, 615, 1, 0.65, 0.67, 0.73, 0.3)
+        self.inspectTitle = line(root, 1142, 703, 615, 28, 23)
+        background(root, 1142, 734, 615, 1, 0.65, 0.67, 0.73, 0.3)
         self.inspect = {}
         for n = 1, 5 do
-            local y = 719 + (n - 1) * 31
+            local y = 741 + (n - 1) * 30
             self.inspect[n] = {
-                highlight = background(root, 1136, y, 628, 30, 0.35, 0.37, 0.43, 0.32),
-                name = line(root, 1142, y, 457, 29, 21), value = line(root, 1604, y, 151, 29, 21),
+                highlight = background(root, 1136, y, 628, 29, 0.35, 0.37, 0.43, 0.32),
+                name = line(root, 1142, y, 457, 28, 21), value = line(root, 1604, y, 151, 28, 21),
             }
             self.inspect[n].value:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
         end
     end)
     task(function()
-        background(root, 36, 890, 1728, 1, unpack(GOLD))
-        self.detailTitle = line(root, 44, 899, 1710, 29, 23)
+        background(root, 36, 900, 1728, 1, unpack(GOLD))
+        self.detailTitle = line(root, 44, 907, 880, 29, 23)
         self.detailTitle:SetColor(unpack(GOLD))
+        local hint = line(root, 940, 911, 816, 24, 16)
+        hint:SetText("十字キー左右：領域   上下：項目   L1/R1・LB/RB：ページ   L2/R2・LT/RT：説明スクロール")
+        hint:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
+        hint:SetColor(unpack(MUTED))
         self.detailScroll = WINDOW_MANAGER:CreateControl("PBsSuperStarDetailScroll", root, CT_SCROLL)
-        self.detailScroll:SetAnchor(TOPLEFT, root, TOPLEFT, 44, 935)
-        self.detailScroll:SetDimensions(1710, 40)
+        self.detailScroll:SetAnchor(TOPLEFT, root, TOPLEFT, 44, 941)
         self.detail = label(self.detailScroll, 0, 0, 1680, 0, 21)
-        line(root, 44, 978, 1710, 22, 16):SetText("十字キー左右：装備 / 詳細ステータス / CP / スキル    上下：項目    L1/R1・LB/RB：ページ    L2/R2・LT/RT：説明スクロール")
+        -- Whole lines only: a height that is not a multiple of the line height clips the last one.
+        local lineHeight = self.detail.GetFontHeight and self.detail:GetFontHeight() or 26
+        self.detailScroll:SetDimensions(1710, math.floor(lineHeight) * 3)
     end)
 end
 
@@ -280,7 +308,10 @@ function U:RenderOverview()
     local stats, skills = self.maps[2], self.maps[4]
     local function value(key) return stats[key] and stats[key].value or "—" end
     for i, key in ipairs({"MAGICKA", "HEALTH", "STAMINA"}) do
-        self.resources[i]:SetText(value("attr" .. key) .. "       " .. value(key .. "_MAX") .. "       ▲" .. value(key .. "_REGEN_COMBAT"))
+        local values = self.resources[i]
+        values.spent:SetText(value("attr" .. key))
+        values.max:SetText(value(key .. "_MAX"))
+        values.regen:SetText(value(key .. "_REGEN_COMBAT"))
     end
     for b, category in ipairs({HOTBAR_CATEGORY_PRIMARY, HOTBAR_CATEGORY_BACKUP}) do
         local bar = self.bars[b]
@@ -313,6 +344,16 @@ function U:RenderOverview()
             c:SetColor(unpack(color))
             c:SetText(entry and ("○ " .. entry.name .. "  " .. entry.value) or "")
         end
+    end
+    -- Class Mastery passives: bought with their own points, so they are counted separately.
+    local mastery = self.data[4].mastery or {}
+    self.masteryTitle:SetText(string.format("クラスマスタリー   取得 %d / ポイント %d", #mastery, mastery.points or 0))
+    self.masteryTitle:SetColor(unpack(GOLD))
+    for n, c in ipairs(self.mastery) do
+        local entry = mastery[n]
+        if entry then c:SetText("○ " .. entry.name .. "  R" .. entry.rank)
+        elseif n == 1 and #mastery == 0 then c:SetText((mastery.lines or 0) > 0 and "取得したパッシブなし" or "クラスマスタリー未解放")
+        else c:SetText("") end
     end
     local effects = {}
     for _, entry in ipairs(self.data[2]) do
