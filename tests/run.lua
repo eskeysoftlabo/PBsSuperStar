@@ -78,17 +78,22 @@ function GetSlotTexture() return "skill.dds" end
 function GetCraftedAbilityDescription(id) return "crafted " .. id end
 function GetAvailableSkillPoints() return 12 end
 function GetNumSkillTypes() return 1 end
-function GetNumSkillLines() return 3 end
+local LINE_NAMES = {[42] = "Class line", [43] = "Class mastery", [44] = "Other class mastery", [45] = "Other class line"}
+SUBCLASSED = false
+function GetNumSkillLines() return 4 end
 function GetSkillLineId(_, l) return 41 + l end
-function GetSkillLineNameById(id) return id > 43 and "Other class mastery" or (id == 43 and "Class mastery" or "Class line") end
+function GetSkillLineNameById(id) return LINE_NAMES[id] end
 -- Line 2 is this character's Class Mastery line: undiscovered, as the client reports them
--- before max rank. Line 3 is another class's, which holds points this character cannot use.
+-- before max rank. Lines 3 and 4 belong to another class, and line 4 is only active while
+-- this character is subclassed into it.
 function GetSkillLineDynamicInfo(_, l)
     if l == 2 then return 4, false, true, false, false, false, true end
     if l == 3 then return 4, false, false, false, false, false, true end
+    if l == 4 then return 10, false, SUBCLASSED, true end
     return 50, false, true, true
 end
-function GetSkillLineClassId(_, l) return l == 3 and 2 or 1 end
+function GetSkillLineClassId(_, l) return l >= 3 and 2 or 1 end
+function IsPlayerClassSkillLineById(id) return id <= 43 end
 function GetNumClassMasteryPointsBySkillLineId(id) return id == 43 and 2 or 7 end
 function GetNumSkillAbilities() return 3 end
 function GetSkillAbilityInfo(_, _, index) return "Skill " .. index, "skill.dds", 1, index == 2, false, index < 3, nil, 2 end
@@ -140,6 +145,14 @@ eq(#skills.mastery, 2, "purchased class mastery passives")
 eq(skills.mastery.lines, 1, "another class's mastery line is not this character's")
 eq(skills.mastery.points, 2, "points of the active class only, not every class")
 eq(skills.mastery[1].name, "Skill 1")
+eq(skills.mastery.subclassed, false)
+-- Subclassing deactivates Class Mastery, so its points stop counting entirely.
+SUBCLASSED = true
+local subclassed = D.Skills(false)
+eq(subclassed.mastery.subclassed, true)
+eq(subclassed.mastery.points, 0, "no Class Mastery points while subclassed")
+eq(#subclassed.mastery, 0)
+SUBCLASSED = false
 local original = D.Equipment
 D.Equipment = function() error("test API failure") end
 local failed = D.Collect(false)
@@ -184,6 +197,10 @@ eq(#U.mastery, 4)
 contains(U.mastery[1].text, "Skill 1")
 contains(U.masteryTitle.text, "取得 2")
 contains(U.masteryTitle.text, "ポイント 2")
+SUBCLASSED = true; U:Refresh()
+contains(U.masteryTitle.text, "選択不可")
+eq(U.mastery[2].text, "")
+SUBCLASSED = false; U:Refresh()
 eq(U.resources[2].max.text, "30000", "resource columns are separate controls")
 eq(U.detailScroll.height % 26, 0, "description height must be whole lines")
 U:MoveColumn(-1); eq(U.column, 4)

@@ -347,13 +347,15 @@ function U:RenderOverview()
     end
     -- Class Mastery passives: bought with their own points, so they are counted separately.
     local mastery = self.data[4].mastery or {}
-    self.masteryTitle:SetText(string.format("クラスマスタリー   取得 %d / 保有ポイント %d", #mastery, mastery.points or 0))
-    self.masteryTitle:SetColor(unpack(GOLD))
+    self.masteryTitle:SetText(mastery.subclassed and "クラスマスタリー   サブクラス使用中は選択不可"
+        or string.format("クラスマスタリー   取得 %d / 保有ポイント %d", #mastery, mastery.points or 0))
+    self.masteryTitle:SetColor(unpack(mastery.subclassed and MUTED or GOLD))
     for n, c in ipairs(self.mastery) do
         local entry = mastery[n]
         if entry then c:SetText("○ " .. entry.name .. "  R" .. entry.rank)
-        elseif n == 1 and #mastery == 0 then c:SetText((mastery.lines or 0) > 0 and "取得したパッシブなし" or "クラスマスタリー未解放")
-        else c:SetText("") end
+        elseif n ~= 1 or #mastery > 0 then c:SetText("")
+        elseif mastery.subclassed then c:SetText("自分のクラスのスキルラインだけの構成で選択できます")
+        else c:SetText((mastery.lines or 0) > 0 and "取得したパッシブなし" or "クラスマスタリー未解放") end
     end
     local effects = {}
     for _, entry in ipairs(self.data[2]) do

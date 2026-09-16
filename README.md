@@ -4,7 +4,7 @@ Puts your character's equipment, detailed statistics, Champion Points and skills
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.2.4 (API 101050)
+- **Version:** 0.2.5 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
@@ -38,9 +38,9 @@ This is those three menus on one screen, kept live while you look at it.
   class mastery points they are bought with. These are a separate currency from skill points,
   and the game reports their skill lines as undiscovered until a class line reaches max rank,
   so they are listed whatever the client says about discovery. Every class in the game has a
-  Class Mastery line with its own pool of points; only the lines belonging to a class you have
-  an active class skill line for are counted here, which is the same set the client itself
-  treats as yours.
+  Class Mastery line reporting its own pool of points, and none of them may be added up:
+  Class Mastery is selectable only while all of your active class skill lines are your own
+  class's, so the block counts nothing at all while you are subclassed.
 - **Skills** — six slots on each bar plus whatever special bar is in use, your active,
   ultimate and passive abilities, line rank, skill rank and unspent points. Scribing skills are
   listed too.
@@ -88,6 +88,13 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.2.5: no Class Mastery while subclassed
+
+Class Mastery cannot be selected at all once a skill line from another class is active, so the
+block now reads サブクラス使用中は選択不可 and counts nothing. Before this it added up the
+points of every class a character had an active line for — six, for a character subclassed into
+two others.
 
 ## 0.2.4: Class Mastery points are per class
 

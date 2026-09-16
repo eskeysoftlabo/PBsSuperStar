@@ -177,9 +177,12 @@ function D.Skills(showAll)
     local mastery = {points = 0, lines = 0}
     rows.mastery = mastery
     -- Every class has a Class Mastery line and every one of them reports its own pool of points,
-    -- so summing them all counts six other classes' points. Only the lines whose class has an
-    -- active class skill line belong to this character, which is what the client itself lists.
+    -- whatever this character can actually use, so nothing here may be summed blindly. Class
+    -- Mastery is only selectable while all three active class skill lines are this character's
+    -- own class: the client deactivates the mastery lines as soon as one is subclassed
+    -- (ZO_SkillsDataManager:DeactivateClassMasterySkillLinesForRespec).
     local masteryLines, activeClasses = {}, {}
+    local activeClassLines, ownClassLines = 0, 0
     for t = 1, GetNumSkillTypes() do
         for l = 1, GetNumSkillLines(t) do
             local lineId = GetSkillLineId(t, l)
@@ -191,6 +194,8 @@ function D.Skills(showAll)
                 masteryLines[#masteryLines + 1] = masteryLine
             elseif classId and classId > 0 and activeLine then
                 activeClasses[classId] = true
+                activeClassLines = activeClassLines + 1
+                if not IsPlayerClassSkillLineById or IsPlayerClassSkillLineById(lineId) then ownClassLines = ownClassLines + 1 end
             end
             -- Class Mastery lines read as undiscovered until a class line is at max rank.
             if discovered or showAll or classMastery then
@@ -217,11 +222,14 @@ function D.Skills(showAll)
             end
         end
     end
-    for _, masteryLine in ipairs(masteryLines) do
-        if activeClasses[masteryLine.classId] then
-            mastery.lines = mastery.lines + 1
-            mastery.points = mastery.points + masteryLine.points
-            for _, entry in ipairs(masteryLine.entries) do mastery[#mastery + 1] = entry end
+    mastery.subclassed = ownClassLines < activeClassLines
+    if not mastery.subclassed then
+        for _, masteryLine in ipairs(masteryLines) do
+            if activeClasses[masteryLine.classId] then
+                mastery.lines = mastery.lines + 1
+                mastery.points = mastery.points + masteryLine.points
+                for _, entry in ipairs(masteryLine.entries) do mastery[#mastery + 1] = entry end
+            end
         end
     end
     return rows
