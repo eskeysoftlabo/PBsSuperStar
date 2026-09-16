@@ -176,16 +176,23 @@ function D.Skills(showAll)
     header(rows, "points", "スキルポイント：未使用 " .. GetAvailableSkillPoints())
     local mastery = {points = 0, lines = 0}
     rows.mastery = mastery
+    -- Every class has a Class Mastery line and every one of them reports its own pool of points,
+    -- so summing them all counts six other classes' points. Only the lines whose class has an
+    -- active class skill line belong to this character, which is what the client itself lists.
+    local masteryLines, activeClasses = {}, {}
     for t = 1, GetNumSkillTypes() do
         for l = 1, GetNumSkillLines(t) do
             local lineId = GetSkillLineId(t, l)
             local rank, _, activeLine, discovered, _, _, classMastery = GetSkillLineDynamicInfo(t, l)
-            -- Class Mastery lines are bought with their own points, and the client reports them
-            -- as undiscovered until a class line is at max rank; keep them listed regardless.
+            local classId = GetSkillLineClassId and GetSkillLineClassId(t, l) or 0
+            local masteryLine
             if classMastery then
-                mastery.lines = mastery.lines + 1
-                mastery.points = mastery.points + masteryPoints(lineId)
+                masteryLine = {classId = classId, points = masteryPoints(lineId), entries = {}}
+                masteryLines[#masteryLines + 1] = masteryLine
+            elseif classId and classId > 0 and activeLine then
+                activeClasses[classId] = true
             end
+            -- Class Mastery lines read as undiscovered until a class line is at max rank.
             if discovered or showAll or classMastery then
                 local entries = {}
                 for s = 1, GetNumSkillAbilities(t, l) do
@@ -197,8 +204,8 @@ function D.Skills(showAll)
                         else description = GetAbilityDescription(id) end
                         local kind = passive and "パッシブ" or (ultimate and "ULT" or "アクティブ")
                         row(entries, "skill" .. t .. ":" .. l .. ":" .. s, name, purchased and ("R" .. abilityRank) or "未取得", kind .. (activeLine and "" or " / ライン非アクティブ") .. "\n" .. description, icon)
-                        if classMastery and purchased then
-                            mastery[#mastery + 1] = {name = clean(name), rank = abilityRank, icon = icon, line = clean(GetSkillLineNameById(lineId))}
+                        if masteryLine and purchased then
+                            masteryLine.entries[#masteryLine.entries + 1] = {name = clean(name), rank = abilityRank, icon = icon, line = clean(GetSkillLineNameById(lineId))}
                         end
                     end
                 end
@@ -208,6 +215,13 @@ function D.Skills(showAll)
                     for _, entry in ipairs(entries) do rows[#rows + 1] = entry end
                 end
             end
+        end
+    end
+    for _, masteryLine in ipairs(masteryLines) do
+        if activeClasses[masteryLine.classId] then
+            mastery.lines = mastery.lines + 1
+            mastery.points = mastery.points + masteryLine.points
+            for _, entry in ipairs(masteryLine.entries) do mastery[#mastery + 1] = entry end
         end
     end
     return rows

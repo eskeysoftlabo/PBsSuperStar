@@ -4,7 +4,7 @@ Puts your character's equipment, detailed statistics, Champion Points and skills
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.2.3 (API 101050)
+- **Version:** 0.2.4 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
@@ -37,7 +37,10 @@ This is those three menus on one screen, kept live while you look at it.
 - **Class Mastery** — the Class Mastery passives you have bought, with their ranks, and the
   class mastery points they are bought with. These are a separate currency from skill points,
   and the game reports their skill lines as undiscovered until a class line reaches max rank,
-  so they are listed whatever the client says about discovery.
+  so they are listed whatever the client says about discovery. Every class in the game has a
+  Class Mastery line with its own pool of points; only the lines belonging to a class you have
+  an active class skill line for are counted here, which is the same set the client itself
+  treats as yours.
 - **Skills** — six slots on each bar plus whatever special bar is in use, your active,
   ultimate and passive abilities, line rank, skill rank and unspent points. Scribing skills are
   listed too.
@@ -85,6 +88,13 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.2.4: Class Mastery points are per class
+
+The Class Mastery header counted every class's points, so a character with two of their own
+showed 14 — seven classes' pools added together. It now counts only the Class Mastery lines
+whose class the character has an active class skill line for, which is the set the client's own
+skills data manager keeps, and so follows subclassing.
 
 ## 0.2.3: nothing cut off at the bottom
 

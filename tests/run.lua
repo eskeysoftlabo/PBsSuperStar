@@ -78,15 +78,18 @@ function GetSlotTexture() return "skill.dds" end
 function GetCraftedAbilityDescription(id) return "crafted " .. id end
 function GetAvailableSkillPoints() return 12 end
 function GetNumSkillTypes() return 1 end
-function GetNumSkillLines() return 2 end
-function GetSkillLineId(_, l) return l == 1 and 42 or 43 end
-function GetSkillLineNameById(id) return id == 43 and "Class mastery" or "Class line" end
--- Line 2 is a Class Mastery line: undiscovered, as the client reports them before max rank.
+function GetNumSkillLines() return 3 end
+function GetSkillLineId(_, l) return 41 + l end
+function GetSkillLineNameById(id) return id > 43 and "Other class mastery" or (id == 43 and "Class mastery" or "Class line") end
+-- Line 2 is this character's Class Mastery line: undiscovered, as the client reports them
+-- before max rank. Line 3 is another class's, which holds points this character cannot use.
 function GetSkillLineDynamicInfo(_, l)
     if l == 2 then return 4, false, true, false, false, false, true end
+    if l == 3 then return 4, false, false, false, false, false, true end
     return 50, false, true, true
 end
-function GetNumClassMasteryPointsBySkillLineId(id) eq(id, 43); return 5 end
+function GetSkillLineClassId(_, l) return l == 3 and 2 or 1 end
+function GetNumClassMasteryPointsBySkillLineId(id) return id == 43 and 2 or 7 end
 function GetNumSkillAbilities() return 3 end
 function GetSkillAbilityInfo(_, _, index) return "Skill " .. index, "skill.dds", 1, index == 2, false, index < 3, nil, 2 end
 function GetSkillAbilityId(_, _, index) return 300 + index end
@@ -134,8 +137,8 @@ eq(find(skills, "skill1:1:3"), nil)
 eq(find(D.Skills(true), "skill1:1:3").value, "未取得")
 contains(find(skills, "line43").name, "クラスマスタリー")
 eq(#skills.mastery, 2, "purchased class mastery passives")
-eq(skills.mastery.lines, 1)
-eq(skills.mastery.points, 5)
+eq(skills.mastery.lines, 1, "another class's mastery line is not this character's")
+eq(skills.mastery.points, 2, "points of the active class only, not every class")
 eq(skills.mastery[1].name, "Skill 1")
 local original = D.Equipment
 D.Equipment = function() error("test API failure") end
@@ -180,7 +183,7 @@ contains(U.effects[1].name.text, "ムンダス")
 eq(#U.mastery, 4)
 contains(U.mastery[1].text, "Skill 1")
 contains(U.masteryTitle.text, "取得 2")
-contains(U.masteryTitle.text, "ポイント 5")
+contains(U.masteryTitle.text, "ポイント 2")
 eq(U.resources[2].max.text, "30000", "resource columns are separate controls")
 eq(U.detailScroll.height % 26, 0, "description height must be whole lines")
 U:MoveColumn(-1); eq(U.column, 4)

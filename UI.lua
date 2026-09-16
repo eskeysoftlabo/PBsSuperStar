@@ -347,7 +347,7 @@ function U:RenderOverview()
     end
     -- Class Mastery passives: bought with their own points, so they are counted separately.
     local mastery = self.data[4].mastery or {}
-    self.masteryTitle:SetText(string.format("クラスマスタリー   取得 %d / ポイント %d", #mastery, mastery.points or 0))
+    self.masteryTitle:SetText(string.format("クラスマスタリー   取得 %d / 保有ポイント %d", #mastery, mastery.points or 0))
     self.masteryTitle:SetColor(unpack(GOLD))
     for n, c in ipairs(self.mastery) do
         local entry = mastery[n]
