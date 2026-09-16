@@ -1,0 +1,25 @@
+﻿; This Add-on is not created by, affiliated with or sponsored by ZeniMax
+; Media Inc. or its affiliates. The Elder Scrolls® and related logos are
+; registered trademarks or trademarks of ZeniMax Media Inc. in the United
+; States and/or other countries. All rights reserved.
+; You can read the full terms at https://account.elderscrollsonline.com/add-on-terms
+
+## Title: SuperStar
+## Description: Search for a Superstar help you to be the SuperStar you ever wanted to be!
+## Version: 4
+## Author: Ayantir
+## APIVersion: 100019
+## SavedVariables: SUPERSTAR
+
+lib/LibStub/LibStub.lua
+lib/LibAnnyoingUpdateNotificationInGame/LibAnnyoingUpdateNotificationInGame.lua
+lib/LibCustomTitles/LibCustomTitles.lua
+lib/LibMainMenu/LibMainMenu.lua
+lib/LibSkillsFactory/LibSkillsFactory.lua
+
+SuperStar.lua
+i18n/en.lua
+i18n/$(language).lua
+
+SuperStar.xml
+bindings.xml
