@@ -180,14 +180,18 @@ local function control() return setmetatable({}, {__index = Control}) end
 WINDOW_MANAGER = {CreateControl = control, CreateTopLevelWindow = control}
 GuiRoot = control(); GuiRoot:SetDimensions(1920, 1080)
 TOPLEFT, CENTER, CT_LABEL, CT_BACKDROP, CT_TEXTURE, CT_SCROLL = 1, 2, 3, 4, 5, 6
-TEXT_ALIGN_RIGHT, TEXT_WRAP_MODE_ELLIPSIS, KEYBIND_STRIP_ALIGN_LEFT = 1, 1, 1
+TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER, TEXT_WRAP_MODE_ELLIPSIS, KEYBIND_STRIP_ALIGN_LEFT = 1, 2, 1, 1
 dofile("UI.lua")
 local U = PBsSuperStar.UI
 U:Create(); U:Refresh()
 eq(#U.gear, 17, "every equipment slot has a row of its own")
-eq(#U.cells, 259)
+eq(#U.cells, 224)
 eq(#U.bars[1].slots, 6)
 eq(#U.bars[2].slots, 6)
+eq(#U.bars[1].names, 6)
+eq(U.bars[1].names[1].text, "Front", "the slotted skill is named, not just drawn")
+eq(U.bars[2].names[1].text, "Back crafted")
+eq(U.bars[1].names[2].text, "未装備")
 eq(U.gear[1].name.text, "Test helm")
 contains(U.masteryLine.text, "取得 2")
 contains(U.masteryLine.text, "ポイント 2")
@@ -211,7 +215,7 @@ U:MoveRow(1000); eq(U.selected[1], #U.data[1])
 eq(U.offsets[1], 0, "every equipment row is on screen at once")
 U:MoveColumn(2); U:MoveRow(1000)
 eq(U.offsets[3], 0, "the whole CP list is on screen at once")
-U:MoveGridColumn(-1); eq(U.selected[3], math.max(1, #U.data[3] - 37))
+U:MoveGridColumn(-1); eq(U.selected[3], math.max(1, #U.data[3] - 32))
 -- More entries than the grid holds is the one case that still pages.
 U.column = 2
 U.data[2] = {}
@@ -286,7 +290,7 @@ end
 assert(frameCount > 1 and U.ready)
 assert(updates.PBsSuperStarRefresh)
 eq(#U.gear, 17, "all gear rows constructed after resuming")
-eq(#U.cells, 259)
+eq(#U.cells, 224)
 PBsSuperStar.scene.changed(nil, SCENE_HIDING)
 local finishedCount = controlsCreated
 for _ = 1, 2 do

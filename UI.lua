@@ -11,9 +11,10 @@ local QUALITY = {[0] = MUTED, [1] = WHITE, [2] = GREEN, [3] = BLUE, [4] = {0.76,
 local BUILD_UPDATE = P.name .. "BuildUI"
 -- The whole of a list is on screen at once: a grid of small cells for the three text areas,
 -- and full-width rows for equipment, which carries an icon and two lines of its own.
-local GRID_COLUMNS, GRID_ROWS = 7, 37
-local GRID_X, GRID_Y, GRID_W, GRID_H = 40, 214, 275, 18
-local GEAR_ROWS, GEAR_Y, GEAR_H = 17, 214, 40
+local GRID_COLUMNS, GRID_ROWS = 7, 32
+local GRID_X, GRID_Y, GRID_W, GRID_H = 40, 308, 275, 18
+local GEAR_ROWS, GEAR_Y, GEAR_H = 17, 308, 34
+local BAR_X, BAR_PITCH = 534, 141
 local DETAIL_Y, DETAIL_SPACE = 932, 100
 local function label(parent, x, y, w, h, size)
     local c = WINDOW_MANAGER:CreateControl(nil, parent, CT_LABEL)
@@ -83,32 +84,31 @@ function U:BuildTasks()
     task(function()
         self.nav = {}
         for i, title in ipairs(TITLES) do
-            self.nav[i] = line(root, 1000 + (i - 1) * 250, 38, 245, 30, 21)
+            self.nav[i] = line(root, 964 + (i - 1) * 250, 38, 246, 30, 21)
             self.nav[i]:SetText(title)
         end
-        self.identity = line(root, 42, 90, 900, 28, 21)
-        self.points = line(root, 1340, 94, 620, 30, 22)
-        self.points:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
-        self.cpTotal = line(root, 1340, 124, 620, 30, 22)
-        self.cpTotal:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
-        self.masteryLine = line(root, 1340, 156, 620, 24, 17)
-        self.masteryLine:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
-        self.status = line(root, 1340, 181, 620, 20, 14)
+        self.identity = line(root, 42, 90, 1300, 28, 21)
+        self.status = line(root, 1400, 96, 560, 20, 14)
         self.status:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
         self.status:SetColor(unpack(MUTED))
+        self.points = line(root, 1400, 240, 560, 28, 21)
+        self.points:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
+        self.cpTotal = line(root, 1400, 268, 560, 28, 21)
+        self.cpTotal:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
+        self.masteryLine = line(root, 44, 244, 900, 22, 15)
     end)
     task(function()
         self.resources = {}
         -- Right-aligned columns; a single spaced string cannot line up in a proportional font.
         local columns = {{"spent", 186, 58, "配分"}, {"max", 250, 100, "最大値"}, {"regen", 356, 104, "戦闘中の再生"}}
         for _, column in ipairs(columns) do
-            local head = line(root, column[2], 100, column[3], 18, 14)
+            local head = line(root, column[2], 124, column[3], 18, 14)
             head:SetText(column[4])
             head:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
             head:SetColor(unpack(MUTED))
         end
         for i, resource in ipairs({{"magicka", "マジカ", BLUE}, {"health", "体力", RED}, {"stamina", "スタミナ", GREEN}}) do
-            local y = 118 + (i - 1) * 30
+            local y = 142 + (i - 1) * 30
             local img = texture(root, 44, y + 1, 24)
             img:SetTexture("EsoUI/Art/CharacterWindow/Gamepad/gp_characterSheet_" .. resource[1] .. "Icon.dds")
             local name = line(root, 76, y, 104, 26, 19)
@@ -128,38 +128,41 @@ function U:BuildTasks()
         local barIndex = b
         task(function()
             local b = barIndex
-            local y = 110 + (b - 1) * 48
-            self.bars[b] = {slots = {}}
-            self.bars[b].title = line(root, 500, y + 10, 62, 24, 17)
+            local y = 128 + (b - 1) * 58
+            self.bars[b] = {slots = {}, names = {}}
+            self.bars[b].title = line(root, 480, y + 6, 50, 24, 17)
             for s = 1, 6 do
-                local x = 566 + (s - 1) * 44 + (s == 6 and 10 or 0)
-                background(root, x - 1, y - 1, 42, 42, 0.3, 0.32, 0.35, 0.7)
-                self.bars[b].slots[s] = texture(root, x, y, 40)
+                local x = BAR_X + (s - 1) * BAR_PITCH + (s == 6 and 8 or 0)
+                background(root, x - 1, y - 1, 34, 34, 0.3, 0.32, 0.35, 0.7)
+                self.bars[b].slots[s] = texture(root, x, y, 32)
+                -- The icon alone does not say which skill it is; the name goes under it.
+                self.bars[b].names[s] = line(root, x - 4, y + 34, 138, 18, 13)
+                self.bars[b].names[s]:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
             end
         end)
     end
     task(function()
         for i, title in ipairs({"威力", "クリ値", "貫通", "耐性"}) do
-            local head = line(root, 940 + (i - 1) * 96, 104, 92, 20, 14)
+            local head = line(root, 1470 + (i - 1) * 124, 124, 116, 18, 13)
             head:SetText(title)
             head:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
             head:SetColor(unpack(MUTED))
         end
         self.offense = {}
         for i, color in ipairs({BLUE, GREEN}) do
-            local y = 128 + (i - 1) * 30
-            line(root, 876, y, 58, 26, 18):SetText(i == 1 and "呪文" or "武器")
+            local y = 146 + (i - 1) * 30
+            line(root, 1406, y, 58, 26, 18):SetText(i == 1 and "呪文" or "武器")
             self.offense[i] = {}
             for j = 1, 4 do
-                self.offense[i][j] = line(root, 940 + (j - 1) * 96, y, 92, 26, 19)
+                self.offense[i][j] = line(root, 1470 + (j - 1) * 124, y, 116, 26, 19)
                 self.offense[i][j]:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
                 self.offense[i][j]:SetColor(unpack(color))
             end
         end
     end)
     task(function()
-        background(root, 36, 208, 1928, 1, 0.65, 0.67, 0.73, 0.3)
-        self.listTitle = line(root, 42, 181, 900, 26, 18)
+        background(root, 36, 302, 1928, 1, 0.65, 0.67, 0.73, 0.3)
+        self.listTitle = line(root, 44, 270, 900, 26, 17)
         -- One highlight, moved to the selected entry, instead of one behind every row.
         self.highlight = background(root, GRID_X, GRID_Y, GRID_W, GRID_H, 0.35, 0.37, 0.43, 0.32)
         self.gear = {}
@@ -171,13 +174,13 @@ function U:BuildTasks()
             local n = rowIndex
             local y = GEAR_Y + (n - 1) * GEAR_H
             local r = {}
-            r.slot = line(root, 44, y + 5, 150, 28, 20)
-            r.icon = texture(root, 202, y + 6, 28)
-            r.level = line(root, 240, y + 6, 92, 24, 18)
-            r.name = line(root, 338, y + 1, 1060, 26, 21)
-            r.subline = line(root, 338, y + 23, 1060, 18, 15)
+            r.slot = line(root, 44, y + 5, 150, 26, 19)
+            r.icon = texture(root, 202, y + 4, 26)
+            r.level = line(root, 238, y + 7, 92, 22, 17)
+            r.name = line(root, 336, y + 4, 620, 26, 20)
+            r.subline = line(root, 970, y + 7, 620, 22, 14)
             r.subline:SetColor(unpack(MUTED))
-            r.set = line(root, 1670, y + 6, 280, 24, 18)
+            r.set = line(root, 1610, y + 7, 340, 22, 17)
             r.set:SetColor(unpack(GREEN))
             r.set:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
             self.gear[n] = r
@@ -292,6 +295,8 @@ function U:RenderOverview()
         for s = 1, 6 do
             local entry = skills["bar" .. category .. ":" .. (s + 2)]
             icon(bar.slots[s], entry and entry.icon)
+            bar.names[s]:SetText(entry and entry.name or "")
+            bar.names[s]:SetColor(unpack(entry and entry.icon and WHITE or MUTED))
         end
     end
     for i, keys in ipairs({{"SPELL_POWER", "SPELL_CRITICAL", "SPELL_PENETRATION", "SPELL_RESIST"}, {"POWER", "CRITICAL_STRIKE", "PHYSICAL_PENETRATION", "PHYSICAL_RESIST"}}) do
