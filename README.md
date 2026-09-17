@@ -4,7 +4,7 @@ Puts your character's equipment, detailed statistics, Champion Points and skills
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.2.6 (API 101050)
+- **Version:** 0.2.7 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
@@ -41,7 +41,7 @@ This is those three menus on one screen, kept live while you look at it.
   Class Mastery line reporting its own pool of points, and none of them may be added up:
   Class Mastery is selectable only while all of your active class skill lines are your own
   class's, so the block counts nothing at all while you are subclassed.
-- **Skills** — six slots on each bar plus whatever special bar is in use, your active,
+- **Skills** — six slots on each bar, each icon with the skill's name written under it plus whatever special bar is in use, your active,
   ultimate and passive abilities, line rank, skill rank and unspent points. Scribing skills are
   listed too.
 
@@ -50,11 +50,11 @@ columns, both skill bars, the combat numbers, the skill and Champion Point total
 Mastery line. Everything below it belongs to the area you have selected with D-pad left and
 right, and holds **all** of that area's entries at once: the seventeen equipment slots as full
 width rows with their trait, enchantment and set count, and the other three areas as a grid of
-seven columns by thirty-seven rows — 259 entries — filled column by column. The description of
+seven columns by thirty-two rows — 224 entries — filled column by column. The description of
 whatever is selected sits at the foot of the screen.
 
 The one thing that does not fit is 全項目, which adds every unearned Champion Point star and
-skill: past 259 entries the area pages, and its title says which range is on screen.
+skill: past 224 entries the area pages, and its title says which range is on screen.
 
 ## Controls
 
@@ -92,6 +92,13 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.2.7: the skill bars say what they are
+
+Each of the twelve bar slots now has its skill's name under its icon, rather than the icon
+alone. The header band grew to fit the names, which cost the grid five rows — 224 cells rather
+than 259 — and equipment rows are a single line each, with the trait and enchantment beside the
+item name instead of under it.
 
 ## 0.2.6: the whole of an area, with nothing to scroll
 
@@ -199,6 +206,7 @@ On-device checklist, still to be completed:
   fully drawn and clear of the keybind strip
 - the 14-point grid cells are legible on a TV at a normal viewing distance, and skill names of
   ordinary length are not truncated in a 190-point cell
+- the bar skill names fit their 138-point slot, or are cut short enough to still identify
 - the first open still completes in about two seconds: the screen now builds roughly 700
   controls, 18 at a time
 - back returns to the menu, and nothing keeps polling or capturing input after it closes
