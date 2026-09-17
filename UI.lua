@@ -13,7 +13,10 @@ local BUILD_UPDATE = P.name .. "BuildUI"
 -- and full-width rows for equipment, which carries an icon and two lines of its own.
 local GRID_COLUMNS, GRID_ROWS = 7, 32
 local GRID_X, GRID_Y, GRID_W, GRID_H = 40, 308, 275, 18
-local GEAR_ROWS, GEAR_Y, GEAR_H = 17, 308, 34
+local GEAR_ROWS, GEAR_Y, GEAR_H, GEAR_W = 17, 308, 34, 1094
+-- Equipment and the detailed statistics share one page: equipment keeps the left of the
+-- screen, and the statistics fill the grid's last three columns beside it.
+local STATS_BASE, STATS_COLUMNS = 4, 3
 local BAR_X, BAR_PITCH = 534, 141
 local DETAIL_Y, DETAIL_SPACE = 932, 100
 local function label(parent, x, y, w, h, size)
@@ -56,6 +59,7 @@ end
 
 function U:PageSize(column)
     if column == 1 then return GEAR_ROWS end
+    if column == 2 then return STATS_COLUMNS * GRID_ROWS end
     return GRID_COLUMNS * GRID_ROWS
 end
 function U:Resize()
@@ -174,13 +178,13 @@ function U:BuildTasks()
             local n = rowIndex
             local y = GEAR_Y + (n - 1) * GEAR_H
             local r = {}
-            r.slot = line(root, 44, y + 5, 150, 26, 19)
-            r.icon = texture(root, 202, y + 4, 26)
-            r.level = line(root, 238, y + 7, 92, 22, 17)
-            r.name = line(root, 336, y + 4, 620, 26, 20)
-            r.subline = line(root, 970, y + 7, 620, 22, 14)
+            r.slot = line(root, 44, y + 5, 118, 24, 17)
+            r.icon = texture(root, 168, y + 5, 24)
+            r.level = line(root, 198, y + 7, 78, 22, 15)
+            r.name = line(root, 284, y + 4, 420, 24, 18)
+            r.subline = line(root, 712, y + 8, 268, 20, 12)
             r.subline:SetColor(unpack(MUTED))
-            r.set = line(root, 1610, y + 7, 340, 22, 17)
+            r.set = line(root, 986, y + 7, 118, 22, 15)
             r.set:SetColor(unpack(GREEN))
             r.set:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
             self.gear[n] = r
@@ -310,9 +314,8 @@ function U:RenderOverview()
 end
 
 function U:RenderGear(entries, offset)
-    local showing = self.column == 1
     for n, r in ipairs(self.gear) do
-        local entry = showing and entries[offset + n]
+        local entry = entries and entries[offset + n]
         r.slot:SetText(entry and entry.slotLabel or "")
         icon(r.icon, entry and entry.icon)
         r.level:SetText(entry and entry.level or "")
@@ -323,10 +326,11 @@ function U:RenderGear(entries, offset)
     end
 end
 
-function U:RenderGrid(entries, offset)
-    local showing = self.column ~= 1
+-- base is the first grid column the list may use; the cells outside it are cleared.
+function U:RenderGrid(entries, offset, base, columns)
+    local first, last = base * GRID_ROWS, (base + columns) * GRID_ROWS
     for n, cell in ipairs(self.cells) do
-        local entry = showing and entries[offset + n]
+        local entry = entries and n > first and n <= last and entries[offset + n - first]
         cell.name:SetText(entry and entry.name or "")
         cell.name:SetColor(unpack(entry and entry.header and GOLD or WHITE))
         cell.value:SetText(entry and entry.value or "")
@@ -334,32 +338,51 @@ function U:RenderGrid(entries, offset)
     end
 end
 
+-- Everything fits on one screen in normal use; paging is the fallback for 全項目.
+function U:Offset(column)
+    local entries, selected = self.data[column], self.selected[column]
+    local page = self:PageSize(column)
+    local offset = math.min(self.offsets[column], math.max(0, #entries - page))
+    if selected <= offset then offset = selected - 1 end
+    if selected > offset + page then offset = selected - page end
+    self.offsets[column] = offset
+    return offset
+end
+
+function U:HighlightCell(position)
+    self.highlight:SetDimensions(GRID_W, GRID_H)
+    self.highlight:SetAnchor(TOPLEFT, self.root, TOPLEFT,
+        GRID_X + math.floor((position - 1) / GRID_ROWS) * GRID_W, GRID_Y + ((position - 1) % GRID_ROWS) * GRID_H)
+end
+
 function U:Render()
     for i = 1, 4 do
         self.nav[i]:SetColor(unpack(i == self.column and GOLD or MUTED))
     end
+    local merged = self.column <= 2
     local entries, selected = self.data[self.column], self.selected[self.column]
     local page = self:PageSize(self.column)
-    -- Everything fits on one screen in normal use; paging is the fallback for 全項目.
-    local offset = math.min(self.offsets[self.column], math.max(0, #entries - page))
-    if selected <= offset then offset = selected - 1 end
-    if selected > offset + page then offset = selected - page end
-    self.offsets[self.column] = offset
+    local offset = self:Offset(self.column)
     self:RenderOverview()
-    self:RenderGear(entries, offset)
-    self:RenderGrid(entries, offset)
+    if merged then
+        self:RenderGear(self.data[1], self:Offset(1))
+        self:RenderGrid(self.data[2], self:Offset(2), STATS_BASE, STATS_COLUMNS)
+    else
+        self:RenderGear(nil, 0)
+        self:RenderGrid(entries, offset, 0, GRID_COLUMNS)
+    end
     local title = string.format("%s   %d / %d", TITLES[self.column], selected, #entries)
     if #entries > page then title = title .. string.format("（%d〜%d を表示）", offset + 1, math.min(offset + page, #entries)) end
     self.listTitle:SetText(title)
     local position = selected - offset
     if position >= 1 and position <= page and #entries > 0 then
         if self.column == 1 then
-            self.highlight:SetDimensions(1928, GEAR_H)
+            self.highlight:SetDimensions(GEAR_W, GEAR_H)
             self.highlight:SetAnchor(TOPLEFT, self.root, TOPLEFT, 36, GEAR_Y + (position - 1) * GEAR_H)
+        elseif self.column == 2 then
+            self:HighlightCell(STATS_BASE * GRID_ROWS + position)
         else
-            self.highlight:SetDimensions(GRID_W, GRID_H)
-            self.highlight:SetAnchor(TOPLEFT, self.root, TOPLEFT,
-                GRID_X + math.floor((position - 1) / GRID_ROWS) * GRID_W, GRID_Y + ((position - 1) % GRID_ROWS) * GRID_H)
+            self:HighlightCell(position)
         end
         self.highlight:SetHidden(false)
     else

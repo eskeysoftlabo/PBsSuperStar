@@ -4,7 +4,7 @@ Puts your character's equipment, detailed statistics, Champion Points and skills
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.2.7 (API 101050)
+- **Version:** 0.2.8 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
@@ -48,13 +48,17 @@ This is those three menus on one screen, kept live while you look at it.
 Nothing scrolls. A band across the top always shows the character, the three attribute
 columns, both skill bars, the combat numbers, the skill and Champion Point totals and the Class
 Mastery line. Everything below it belongs to the area you have selected with D-pad left and
-right, and holds **all** of that area's entries at once: the seventeen equipment slots as full
-width rows with their trait, enchantment and set count, and the other three areas as a grid of
-seven columns by thirty-two rows — 224 entries — filled column by column. The description of
-whatever is selected sits at the foot of the screen.
+right, and holds **all** of that area's entries at once.
+
+Equipment and the detailed statistics share one page: the seventeen equipment slots keep the
+left of the screen as narrow rows carrying the trait, enchantment and set count, and the
+statistics fill the three columns beside them — 96 entries. D-pad left and right moves the
+focus between the two without changing the page. Champion Points and skills each take the whole
+width instead: a grid of seven columns by thirty-two rows, 224 entries, filled column by column.
+The description of whatever is selected sits at the foot of the screen.
 
 The one thing that does not fit is 全項目, which adds every unearned Champion Point star and
-skill: past 224 entries the area pages, and its title says which range is on screen.
+skill: past what a page holds the area pages, and its title says which range is on screen.
 
 ## Controls
 
@@ -92,6 +96,13 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.2.8: equipment and the statistics on one page
+
+The equipment rows gave up the right half of the screen — everything is narrower and pushed
+left, ending at 1104 rather than 1950 — and the detailed statistics now sit in the three grid
+columns beside them, so both are read without changing page. The statistics hold 96 entries
+there; a character with more than that pages, as 全項目 already did.
 
 ## 0.2.7: the skill bars say what they are
 
