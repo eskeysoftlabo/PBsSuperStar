@@ -4,7 +4,7 @@ Puts your character's equipment, detailed statistics, Champion Points and skills
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.2.5 (API 101050)
+- **Version:** 0.2.6 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
@@ -45,19 +45,23 @@ This is those three menus on one screen, kept live while you look at it.
   ultimate and passive abilities, line rank, skill rank and unspent points. Scribing skills are
   listed too.
 
-The layout follows the original SuperStar: one translucent screen, character and the three
-attribute bars top left, both skill bars and the combat numbers top centre, the fourteen
-equipment slots bottom left, and on the right the constellations, slotted CP, active effects
-and known skills. Traits and enchantments sit under the item name, set counts at the right
-edge. Poisons and the costume are on the equipment list's second page.
+Nothing scrolls. A band across the top always shows the character, the three attribute
+columns, both skill bars, the combat numbers, the skill and Champion Point totals and the Class
+Mastery line. Everything below it belongs to the area you have selected with D-pad left and
+right, and holds **all** of that area's entries at once: the seventeen equipment slots as full
+width rows with their trait, enchantment and set count, and the other three areas as a grid of
+seven columns by thirty-seven rows — 259 entries — filled column by column. The description of
+whatever is selected sits at the foot of the screen.
+
+The one thing that does not fit is 全項目, which adds every unearned Champion Point star and
+skill: past 259 entries the area pages, and its title says which range is on screen.
 
 ## Controls
 
 | action | PS / Xbox |
 | --- | --- |
 | choose an area, then an entry | D-pad left/right, up/down |
-| page through the selected area | L1 / R1 — LB / RB |
-| scroll the description at the bottom | L2 / R2 — LT / RT |
+| jump a whole column of entries | L1 / R1 — LB / RB |
 | refresh now | the 再取得 button on the screen |
 | show unearned CP and skills too | the 取得済み / 全項目 button |
 | back to the menu | ○ / B (follows your back-button setting) |
@@ -88,6 +92,20 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.2.6: the whole of an area, with nothing to scroll
+
+Paging through five entries at a time is gone. The selected area now uses the screen below the
+header band and shows every one of its entries at once: equipment as seventeen full-width rows,
+the other three areas as a 7 × 37 grid of 259 small cells. The font is smaller for it — 14 for a
+grid cell — which is the trade the density needs. L1/R1 moves a whole column instead of a page,
+and the description pane no longer scrolls: it draws as many whole lines as the space below it
+holds, so a long set description is cut at the end rather than half-drawn.
+
+The window is 2000 × 1040 rather than 1800 × 1040, which is closer to 16:9 and so uses the width
+of the screen instead of leaving a margin at each side.
+
+Only 全項目 can still overflow, and only that mode pages.
 
 ## 0.2.5: no Class Mastery while subclassed
 
@@ -179,6 +197,10 @@ On-device checklist, still to be completed:
 - equipment, attributes, CP, Class Mastery and skills match the game's own screens
 - at 720p and with the largest UI scale, the description pane's last line and the controls hint are
   fully drawn and clear of the keybind strip
+- the 14-point grid cells are legible on a TV at a normal viewing distance, and skill names of
+  ordinary length are not truncated in a 190-point cell
+- the first open still completes in about two seconds: the screen now builds roughly 700
+  controls, 18 at a time
 - back returns to the menu, and nothing keeps polling or capturing input after it closes
 
 ---
