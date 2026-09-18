@@ -142,9 +142,11 @@ function D.Build(mastery)
         if not slots[discipline] then slots[discipline] = {}; order[#order + 1] = discipline end
         table.insert(slots[discipline], slot)
     end
-    for _, discipline in ipairs(order) do
+    -- gapBefore leaves a blank row between sections; breakBefore starts the next column.
+    for n, discipline in ipairs(order) do
         local kind = GetChampionDisciplineType(discipline)
-        group(rows, "cpgroup" .. discipline, clean(GetChampionDisciplineName(discipline)), GetNumSpentChampionPoints(discipline)).discipline = kind
+        local title = group(rows, "cpgroup" .. discipline, clean(GetChampionDisciplineName(discipline)), GetNumSpentChampionPoints(discipline))
+        title.discipline, title.gapBefore = kind, n > 1
         for _, slot in ipairs(slots[discipline]) do
             local id = GetSlotBoundId(slot, HOTBAR_CATEGORY_CHAMPION)
             if id and id > 0 then
@@ -170,7 +172,7 @@ function D.Build(mastery)
         row(rows, "masteryNone", (mastery.lines or 0) > 0 and "取得したパッシブなし" or "未解放", "", "")
     end
 
-    group(rows, "mundus", "ムンダス", "")
+    group(rows, "mundus", "ムンダス", "").gapBefore = true
     local mundus = {GetUnitActiveMundusStoneBuffIndices("player")}
     for _, i in ipairs(mundus) do
         local name, _, _, _, _, icon, _, _, _, _, ability = GetUnitBuffInfo("player", i)
@@ -180,7 +182,7 @@ function D.Build(mastery)
 
     local curse = GetPlayerCurseType and GetPlayerCurseType() or CURSE_TYPE_NONE
     local curseName = (curse and curse ~= CURSE_TYPE_NONE) and clean(GetString("SI_CURSETYPE", curse)) or "なし"
-    group(rows, "curse", "呪い", "")
+    group(rows, "curse", "呪い", "").gapBefore = true
     row(rows, "curseType", curseName, "", "吸血症・人狼症の状態です。")
     return rows
 end

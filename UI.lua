@@ -25,13 +25,14 @@ local function disciplineColor(kind)
 end
 local BUILD_UPDATE = P.name .. "BuildUI"
 -- The whole of a list is on screen at once: a grid of small cells for the three text areas,
--- and full-width rows for equipment, which carries an icon and two lines of its own.
+-- and rows for equipment, which carries an icon and a trait line of its own.
 local GRID_COLUMNS, GRID_ROWS = 7, 32
 local GRID_X, GRID_Y, GRID_W, GRID_H = 40, 308, 275, 18
 local GEAR_ROWS, GEAR_Y, GEAR_H, GEAR_W = 17, 308, 34, 1094
--- Equipment and the detailed statistics share one page: equipment keeps the left of the
--- screen, and the statistics fill the grid's last three columns beside it.
-local STATS_BASE, STATS_COLUMNS = 4, 3
+-- Equipment and the build share the first page: equipment keeps the left of the screen, and
+-- the build, which is short, gets two columns of large cells of its own beside it.
+local BUILD_X, BUILD_Y, BUILD_W, BUILD_H, BUILD_ROWS, BUILD_COLUMNS = 1140, 308, 412, 34, 17, 2
+local MEDIUM, BOLD = "$(GAMEPAD_MEDIUM_FONT)|20|soft-shadow-thin", "$(GAMEPAD_BOLD_FONT)|20|soft-shadow-thin"
 local BAR_X, BAR_PITCH = 534, 141
 local COMBAT_X, COMBAT_W = {1462, 1560, 1746, 1850}, {92, 180, 98, 108}
 local DETAIL_Y, DETAIL_SPACE = 932, 96
@@ -75,7 +76,7 @@ end
 
 function U:PageSize(column)
     if column == 1 then return GEAR_ROWS end
-    if column == 2 then return STATS_COLUMNS * GRID_ROWS end
+    if column == 2 then return BUILD_COLUMNS * BUILD_ROWS end
     return GRID_COLUMNS * GRID_ROWS
 end
 function U:Resize()
@@ -193,16 +194,30 @@ function U:BuildTasks()
             local n = rowIndex
             local y = GEAR_Y + (n - 1) * GEAR_H
             local r = {}
-            r.slot = line(root, 44, y + 5, 118, 24, 17)
-            r.icon = texture(root, 168, y + 5, 24)
-            r.level = line(root, 198, y + 7, 78, 22, 15)
-            r.name = line(root, 284, y + 4, 420, 24, 18)
-            r.subline = line(root, 712, y + 8, 268, 20, 12)
+            r.slot = line(root, 44, y + 4, 122, 27, 20)
+            r.icon = texture(root, 170, y + 4, 26)
+            r.level = line(root, 202, y + 6, 84, 24, 17)
+            r.name = line(root, 292, y + 3, 440, 28, 21)
+            r.subline = line(root, 742, y + 7, 262, 22, 15)
             r.subline:SetColor(unpack(MUTED))
-            r.set = line(root, 986, y + 7, 118, 22, 15)
+            r.set = line(root, 1008, y + 6, 96, 24, 17)
             r.set:SetColor(unpack(GREEN))
             r.set:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
             self.gear[n] = r
+        end)
+    end
+    task(function() self.buildCells = {} end)
+    for first = 1, BUILD_COLUMNS * BUILD_ROWS, 6 do
+        local start = first
+        task(function()
+            for n = start, math.min(start + 5, BUILD_COLUMNS * BUILD_ROWS) do
+                local x = BUILD_X + math.floor((n - 1) / BUILD_ROWS) * BUILD_W
+                local y = BUILD_Y + ((n - 1) % BUILD_ROWS) * BUILD_H
+                local cell = {icon = texture(root, x + 2, y + 5, 24), name = line(root, x + 32, y + 4, 276, 27, 20),
+                    value = line(root, x + 312, y + 5, 92, 26, 19)}
+                cell.value:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
+                self.buildCells[n] = cell
+            end
         end)
     end
     for first = 1, GRID_COLUMNS * GRID_ROWS, 9 do
@@ -339,28 +354,52 @@ function U:RenderGear(entries, offset)
     end
 end
 
--- base is the first grid column the list may use; the cells outside it are cleared. An entry
--- marked breakBefore starts a new column. Returns the cell each shown entry landed in.
-function U:RenderGrid(entries, offset, base, columns)
-    local first, last = base * GRID_ROWS, (base + columns) * GRID_ROWS
-    local placed, cellFor = {}, {}
-    local cursor = first
+-- Places entries column by column into capacity cells of the given column height. An entry
+-- marked breakBefore starts a new column; gapBefore leaves one empty row above it, except at
+-- the top of a column. Returns the entry for each cell, and the cell for each entry.
+local function layout(entries, offset, capacity, rows)
+    local placed, cellFor, cursor = {}, {}, 0
     for n = offset + 1, entries and #entries or 0 do
         local entry = entries[n]
-        if entry.breakBefore and cursor > first and (cursor - first) % GRID_ROWS ~= 0 then
-            cursor = cursor + GRID_ROWS - (cursor - first) % GRID_ROWS
-        end
+        local row = cursor % rows
+        if entry.breakBefore and row ~= 0 then cursor = cursor + rows - row
+        elseif entry.gapBefore and row ~= 0 and row < rows - 1 then cursor = cursor + 1 end
         cursor = cursor + 1
-        if cursor > last then break end
+        if cursor > capacity then break end
         placed[cursor], cellFor[n] = entry, cursor
     end
+    return placed, cellFor
+end
+local function colors(entry)
+    local color = entry and (disciplineColor(entry.discipline) or (entry.header and GOLD)) or WHITE
+    return color, entry and (entry.discipline or entry.header) and color or MUTED
+end
+
+function U:RenderGrid(entries, offset)
+    local placed, cellFor = layout(entries, offset, #self.cells, GRID_ROWS)
     for n, cell in ipairs(self.cells) do
         local entry = placed[n]
-        local color = entry and (disciplineColor(entry.discipline) or (entry.header and GOLD)) or WHITE
+        local nameColor, valueColor = colors(entry)
         cell.name:SetText(entry and entry.name or "")
-        cell.name:SetColor(unpack(color))
+        cell.name:SetColor(unpack(nameColor))
         cell.value:SetText(entry and entry.value or "")
-        cell.value:SetColor(unpack(entry and (entry.discipline or entry.header) and color or MUTED))
+        cell.value:SetColor(unpack(valueColor))
+    end
+    return cellFor
+end
+
+function U:RenderBuild(entries, offset)
+    local placed, cellFor = layout(entries, offset, #self.buildCells, BUILD_ROWS)
+    for n, cell in ipairs(self.buildCells) do
+        local entry = placed[n]
+        local nameColor, valueColor = colors(entry)
+        local font = entry and entry.header and BOLD or MEDIUM
+        if cell.font ~= font then cell.name:SetFont(font); cell.font = font end
+        icon(cell.icon, entry and entry.icon)
+        cell.name:SetText(entry and entry.name or "")
+        cell.name:SetColor(unpack(nameColor))
+        cell.value:SetText(entry and entry.value or "")
+        cell.value:SetColor(unpack(valueColor))
     end
     return cellFor
 end
@@ -394,10 +433,12 @@ function U:Render()
     local cellFor
     if merged then
         self:RenderGear(self.data[1], self:Offset(1))
-        cellFor = self:RenderGrid(self.data[2], self:Offset(2), STATS_BASE, STATS_COLUMNS)
+        cellFor = self:RenderBuild(self.data[2], self:Offset(2))
+        self:RenderGrid(nil, 0)
     else
         self:RenderGear(nil, 0)
-        cellFor = self:RenderGrid(entries, offset, 0, GRID_COLUMNS)
+        self:RenderBuild(nil, 0)
+        cellFor = self:RenderGrid(entries, offset)
     end
     local title = string.format("%s   %d / %d", TITLES[self.column], selected, #entries)
     if #entries > page then title = title .. string.format("（%d〜%d を表示）", offset + 1, math.min(offset + page, #entries)) end
@@ -406,6 +447,12 @@ function U:Render()
     if self.column == 1 and position >= 1 and position <= page then
         self.highlight:SetDimensions(GEAR_W, GEAR_H)
         self.highlight:SetAnchor(TOPLEFT, self.root, TOPLEFT, 36, GEAR_Y + (position - 1) * GEAR_H)
+        self.highlight:SetHidden(false)
+    elseif self.column == 2 and cellFor[selected] then
+        local n = cellFor[selected]
+        self.highlight:SetDimensions(BUILD_W - 4, BUILD_H)
+        self.highlight:SetAnchor(TOPLEFT, self.root, TOPLEFT,
+            BUILD_X + math.floor((n - 1) / BUILD_ROWS) * BUILD_W, BUILD_Y + ((n - 1) % BUILD_ROWS) * BUILD_H)
         self.highlight:SetHidden(false)
     elseif self.column ~= 1 and cellFor[selected] then
         self:HighlightCell(cellFor[selected])
@@ -449,7 +496,7 @@ function U:PageDetail(delta)
 end
 function U:MoveGridColumn(delta)
     if not self.ready then return end
-    self:MoveRow(delta * (self.column == 1 and GEAR_ROWS or GRID_ROWS))
+    self:MoveRow(delta * (self.column == 1 and GEAR_ROWS or (self.column == 2 and BUILD_ROWS) or GRID_ROWS))
 end
 function U:Keybinds()
     local group = {alignment = KEYBIND_STRIP_ALIGN_LEFT}

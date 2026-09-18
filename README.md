@@ -4,7 +4,7 @@ Puts your character's equipment, detailed statistics, Champion Points and skills
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.2.9 (API 101050)
+- **Version:** 0.2.10 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
@@ -58,9 +58,10 @@ below it belongs to the area you have selected with D-pad left and right — 装
 詳細ステータス, 星座・CPパッシブ, スキル — and holds **all** of that area's entries at once.
 
 The first page is equipment and the build together: the seventeen equipment slots keep the left
-of the screen as narrow rows carrying the trait, enchantment and set count, and the build fills
-the three columns beside them, slotted CP in the first and Class Mastery, Mundus and curse in the
-next. D-pad left and right moves the focus between the two without changing the page. The
+of the screen as rows carrying the trait, enchantment and set count, and the build sits beside
+them in two columns of large cells — slotted CP in the first, a blank row between constellations,
+and Class Mastery, Mundus and curse in the second. The first page uses 20-point type or larger
+throughout, since neither list is long. D-pad left and right moves the focus between the two without changing the page. The
 detailed statistics, Champion Points and skills each take the whole width: a grid of seven
 columns by thirty-two rows, 224 entries, filled column by column.
 
@@ -106,6 +107,14 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.2.10: larger type on the first page
+
+The build no longer borrows the 14-point grid cells. It has 34 cells of its own, two columns of
+seventeen 34-point rows, with 20-point names, section titles in bold, icons for Mundus and the
+Class Mastery passives, and a blank row between sections. Seventeen rows is exactly what three
+constellations of four slots need with a gap between each. The equipment rows went up too: the
+item name from 18 to 21, the slot from 17 to 20, the trait line from 12 to 15.
 
 ## 0.2.9: the first page is the build
 
