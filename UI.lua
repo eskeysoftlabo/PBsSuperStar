@@ -357,17 +357,24 @@ end
 -- Places entries column by column into capacity cells of the given column height. An entry
 -- marked breakBefore starts a new column; gapBefore leaves one empty row above it, except at
 -- the top of a column. Returns the entry for each cell, and the cell for each entry.
-local function layout(entries, offset, capacity, rows)
-    local placed, cellFor, cursor = {}, {}, 0
+local function place(entries, offset, capacity, rows, gaps)
+    local placed, cellFor, cursor, complete = {}, {}, 0, true
     for n = offset + 1, entries and #entries or 0 do
         local entry = entries[n]
         local row = cursor % rows
         if entry.breakBefore and row ~= 0 then cursor = cursor + rows - row
-        elseif entry.gapBefore and row ~= 0 and row < rows - 1 then cursor = cursor + 1 end
+        elseif gaps and entry.gapBefore and row ~= 0 and row < rows - 1 then cursor = cursor + 1 end
         cursor = cursor + 1
-        if cursor > capacity then break end
+        if cursor > capacity then complete = false; break end
         placed[cursor], cellFor[n] = entry, cursor
     end
+    return placed, cellFor, complete
+end
+-- The blank rows are dropped rather than lose an entry when they would not all fit.
+local function layout(entries, offset, capacity, rows)
+    local placed, cellFor, complete = place(entries, offset, capacity, rows, true)
+    if complete then return placed, cellFor end
+    placed, cellFor = place(entries, offset, capacity, rows, false)
     return placed, cellFor
 end
 local function colors(entry)

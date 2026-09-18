@@ -4,7 +4,7 @@ Puts your character's equipment, detailed statistics, Champion Points and skills
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.2.12 (API 101050)
+- **Version:** 0.2.13 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
@@ -34,8 +34,8 @@ This is those three menus on one screen, kept live while you look at it.
   `GetCriticalStrikeChance` as the game's own stats screen does. These are shown only here and
   are not repeated in any list.
 - **Build** — what the Armory saves as a build: the twelve slotted Champion Points under their
-  constellations, coloured blue, red and green, then Class Mastery, the Mundus stone and the
-  curse (vampirism or lycanthropy, named with the game's own `SI_CURSETYPE` string).
+  constellations, coloured blue, red and green, then the three class skill lines currently
+  selected (subclassed ones marked サブ), Class Mastery, the Mundus stone and the curse (vampirism or lycanthropy, named with the game's own `SI_CURSETYPE` string).
 - **Statistics** — every detailed statistic category the API exposes, from コアアビリティ on,
   and the effects currently running on you (Mundus, food, and the rest).
 - **Champion Points** — twelve slots, spent and unspent points per constellation, and per star
@@ -107,6 +107,14 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.2.13: the selected class skill lines
+
+The build's second column now opens with クラススキルライン: the class skill lines currently
+selected, each with its rank, and サブ in front of the rank for a line taken from another class.
+They sit directly above Class Mastery because Class Mastery depends on them — it is available only
+while all of them are your own class's. If a column ever has more entries than rows, its blank
+separator rows are dropped before any entry is.
 
 ## 0.2.12: larger type in the header band
 

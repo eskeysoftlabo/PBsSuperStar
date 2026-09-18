@@ -133,7 +133,7 @@ local function group(rows, key, name, value, detail)
     return rows[#rows]
 end
 
-function D.Build(mastery)
+function D.Build(mastery, classLines)
     local rows = {}
     local first, last = GetAssignableChampionBarStartAndEndSlots()
     local order, slots = {}, {}
@@ -159,10 +159,19 @@ function D.Build(mastery)
         end
     end
 
+    -- The selected class skill lines head the second column, directly above Class Mastery,
+    -- which depends on them.
+    classLines = classLines or {}
+    group(rows, "classLines", "クラススキルライン", "", "現在選択しているクラススキルラインです。").breakBefore = true
+    for n, line in ipairs(classLines) do
+        row(rows, "classLine" .. n, line.name, (line.own and "" or "サブ ") .. "R" .. line.rank,
+            line.own and "自分のクラスのスキルラインです。" or "サブクラスで選択しているスキルラインです。")
+    end
+    if #classLines == 0 then row(rows, "classLineNone", "なし", "", "") end
+
     mastery = mastery or {}
-    local title = group(rows, "mastery", "クラスマスタリー", mastery.subclassed and "選択不可" or string.format("取得 %d / 保有 %d", #mastery, mastery.points or 0),
-        "クラスマスタリーは、有効なクラススキルラインがすべて自分のクラスのときだけ選択できます。")
-    title.breakBefore = true
+    group(rows, "mastery", "クラスマスタリー", mastery.subclassed and "選択不可" or string.format("取得 %d / 保有 %d", #mastery, mastery.points or 0),
+        "クラスマスタリーは、有効なクラススキルラインがすべて自分のクラスのときだけ選択できます。").gapBefore = true
     for n, entry in ipairs(mastery) do
         row(rows, "mastery" .. n, entry.name, "R" .. entry.rank, entry.detail, entry.icon)
     end
@@ -251,6 +260,9 @@ function D.Skills(showAll)
     -- (ZO_SkillsDataManager:DeactivateClassMasterySkillLinesForRespec).
     local masteryLines, activeClasses = {}, {}
     local activeClassLines, ownClassLines = 0, 0
+    -- The (up to three) class skill lines currently selected, own class or subclassed.
+    local classLines = {}
+    rows.classLines = classLines
     for t = 1, GetNumSkillTypes() do
         for l = 1, GetNumSkillLines(t) do
             local lineId = GetSkillLineId(t, l)
@@ -260,10 +272,12 @@ function D.Skills(showAll)
             if classMastery then
                 masteryLine = {classId = classId, points = masteryPoints(lineId), entries = {}}
                 masteryLines[#masteryLines + 1] = masteryLine
-            elseif classId and classId > 0 and activeLine then
+            elseif classId and classId > 0 and activeLine and (not SKILL_TYPE_CLASS or t == SKILL_TYPE_CLASS) then
                 activeClasses[classId] = true
                 activeClassLines = activeClassLines + 1
-                if not IsPlayerClassSkillLineById or IsPlayerClassSkillLineById(lineId) then ownClassLines = ownClassLines + 1 end
+                local own = not IsPlayerClassSkillLineById or IsPlayerClassSkillLineById(lineId)
+                if own then ownClassLines = ownClassLines + 1 end
+                classLines[#classLines + 1] = {name = clean(GetSkillLineNameById(lineId)), rank = rank, own = own}
             end
             -- Class Mastery lines read as undiscovered until a class line is at max rank.
             if discovered or showAll or classMastery then
@@ -319,7 +333,7 @@ end
 -- 4 Champion Points, 5 skills. One failing collector never blanks the others.
 function D.Collect(showAll)
     local skills = safely(D.Skills, showAll)
-    local columns = {safely(D.Equipment), safely(D.Build, skills.mastery), safely(D.Stats), safely(D.Champion, showAll), skills}
+    local columns = {safely(D.Equipment), safely(D.Build, skills.mastery, skills.classLines), safely(D.Stats), safely(D.Champion, showAll), skills}
     local ok, basics = pcall(D.Basics)
     columns.basics = ok and basics or {}
     return columns
