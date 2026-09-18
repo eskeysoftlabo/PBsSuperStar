@@ -17,7 +17,8 @@ function GetItemLinkTraitInfo() return 1, "trait" end
 function GetItemLinkEnchantInfo() return false, "enchant", "enchantment description" end
 function GetItemLinkSetInfo() return true, "set", 2, 3, 5, 99, 1 end
 function GetItemLinkSetBonusInfo(_, equipped, index) eq(equipped, true); return index + 1, "bonus " .. index end
-function GetItemLinkDisplayQuality() return 5 end
+ITEM_QUALITY = 5
+function GetItemLinkDisplayQuality() return ITEM_QUALITY end
 function GetItemLinkRequiredLevel() return 50 end
 function GetItemLinkRequiredChampionPoints() return 160 end
 function GetItemCondition() return 99 end
@@ -28,7 +29,11 @@ function GetItemLinkWeaponType() return 0 end
 function DoesItemLinkHaveEnchantCharges() return false end
 function GetItemLinkName() return "Test helm" end
 function GetItemInfo() return "helm.dds", 1, 2 end
-STAT_HEALTH_MAX, STAT_BONUS_OPTION_APPLY_BONUS = 1, 1
+STAT_HEALTH_MAX, STAT_SPELL_CRITICAL, STAT_BONUS_OPTION_APPLY_BONUS = 1, 2, 1
+function GetCriticalStrikeChance(rating) eq(rating, 30000); return 55.25 end
+CURSE_TYPE_NONE, CURSE_TYPE_VAMPIRE = 0, 1
+CURSE = CURSE_TYPE_NONE
+function GetPlayerCurseType() return CURSE end
 ATTRIBUTE_HEALTH, ATTRIBUTE_MAGICKA, ATTRIBUTE_STAMINA = 1, 2, 3
 function GetPlayerStat(_, bonus) eq(bonus, 1); return 30000 end
 function GetAttributeSpentPoints() return 20 end
@@ -123,6 +128,14 @@ eq(find(gear, "HEAD").slotLabel, "頭")
 contains(find(gear, "HEAD").subline, "enchant")
 contains(find(gear, "HAND").name, "未装備")
 local stats = D.Stats()
+eq(find(stats, "HEALTH_MAX"), nil, "header-band numbers are not listed again")
+eq(find(stats, "attrHEALTH"), nil)
+eq(find(stats, "category15").header, true, "the list starts at the first advanced category")
+local basics = D.Basics()
+eq(basics.HEALTH_MAX, 30000)
+eq(basics.attrHEALTH, 20)
+eq(D.Critical(basics.SPELL_CRITICAL), "30000 (55.2%)", "rating followed by the chance it gives")
+eq(D.Critical(nil), "—")
 eq(find(stats, "stat1").value, "100")
 eq(find(stats, "stat2").value, "12.5%")
 eq(find(stats, "stat3").value, "12.5%")
@@ -153,17 +166,39 @@ eq(subclassed.mastery.subclassed, true)
 eq(subclassed.mastery.points, 0, "no Class Mastery points while subclassed")
 eq(#subclassed.mastery, 0)
 SUBCLASSED = false
+-- The first page's build summary: slotted CP by constellation, Class Mastery, Mundus, curse.
+local build = D.Build(skills.mastery)
+eq(find(build, "cpgroup17").header, true)
+eq(find(build, "cpgroup17").value, "60")
+eq(find(build, "cpgroup17").discipline, CHAMPION_DISCIPLINE_TYPE_COMBAT, "coloured by constellation")
+eq(find(build, "cpslot1").name, "Star 201")
+eq(find(build, "cpslot1").discipline, CHAMPION_DISCIPLINE_TYPE_COMBAT)
+contains(find(build, "cpslot2").name, "未装備")
+eq(find(build, "mastery").value, "取得 2 / 保有 2")
+eq(find(build, "mastery").breakBefore, true)
+eq(find(build, "mastery1").value, "R2")
+eq(find(build, "mastery1").detail, "description 301", "mastery passives carry their description")
+eq(find(build, "mundus1").name, "Boon")
+eq(find(build, "curseType").name, "なし")
+CURSE = CURSE_TYPE_VAMPIRE
+eq(find(D.Build(skills.mastery), "curseType").name, "1", "curse named by the game's own string")
+CURSE = CURSE_TYPE_NONE
+eq(find(D.Build(subclassed.mastery), "mastery").value, "選択不可")
 local original = D.Equipment
 D.Equipment = function() error("test API failure") end
 local failed = D.Collect(false)
 eq(failed[1][1].key, "error")
 contains(failed[1][1].detail, "test API failure")
 assert(#failed[4] > 1, "one collector must not blank other columns")
+eq(#failed, 5)
+eq(failed.basics.HEALTH_MAX, 30000)
 D.Equipment = original
 
 -- UI controls fail on unknown methods, catching typos rather than absorbing them.
 local Control = {}
-for _, method in ipairs({"SetAnchor", "SetFont", "SetColor", "SetHorizontalAlignment", "SetMaxLineCount", "SetWrapMode", "SetCenterColor", "SetEdgeColor", "SetTexture"}) do Control[method] = function() end end
+function Control:SetColor(r, g, b, a) self.color = {r, g, b, a} end
+function Control:SetAnchor(_, _, _, x, y) self.x, self.y = x, y end
+for _, method in ipairs({"SetFont", "SetHorizontalAlignment", "SetMaxLineCount", "SetWrapMode", "SetCenterColor", "SetEdgeColor", "SetTexture"}) do Control[method] = function() end end
 function Control:GetFontHeight() return 26 end
 function Control:SetDimensions(w, h) self.width, self.height = w, h end
 function Control:GetDimensions() return self.width, self.height end
@@ -193,47 +228,65 @@ eq(U.bars[1].names[1].text, "Front", "the slotted skill is named, not just drawn
 eq(U.bars[2].names[1].text, "Back crafted")
 eq(U.bars[1].names[2].text, "未装備")
 eq(U.gear[1].name.text, "Test helm")
-contains(U.masteryLine.text, "取得 2")
-contains(U.masteryLine.text, "ポイント 2")
-SUBCLASSED = true; U:Refresh()
-contains(U.masteryLine.text, "選択不可")
-SUBCLASSED = false; U:Refresh()
+eq(U.gear[1].name.color[1], 0.88, "legendary items are gold")
+ITEM_QUALITY = 6; U:Refresh()
+eq(U.gear[1].name.color[1], 1); eq(U.gear[1].name.color[2], 0.55, "Mythic items are orange, not white")
+INTERFACE_COLOR_TYPE_ITEM_QUALITY_COLORS = 7
+function GetInterfaceColor(kind, quality) eq(kind, 7); eq(quality, 6); return 0.9, 0.5, 0.1, 1 end
+U:Refresh(); eq(U.gear[1].name.color[2], 0.5, "the game's own quality colour wins when available")
+GetInterfaceColor, ITEM_QUALITY = nil, 5; U:Refresh()
 eq(U.resources[2].max.text, "30000", "resource columns are separate controls")
-eq(U.detail.height % 26, 0, "description height must be whole lines")
--- Equipment shares its page with the detailed statistics, which sit in the last three
--- grid columns; the columns beside the equipment rows stay empty.
+eq(U.offense[1][2].text, "30000 (55.2%)", "critical rating with its chance")
+eq(U.detailScroll.height % 26, 0, "description window is whole lines")
+-- Page 1: equipment on the left, the build summary in the grid's last three columns.
+local B = 4 * 32
 eq(U.cells[1].name.text, "")
 contains(U.gear[3].name.text, "未装備")
 eq(U:PageSize(2), 96)
-contains(U.cells[4 * 32 + 1].name.text, "体力", "statistics start in the grid's fifth column")
+eq(U.cells[B + 1].name.text, "Warfare", "constellation heads the first column")
+eq(U.cells[B + 1].name.color[1], 0.35, "combat CP is blue")
+eq(U.cells[B + 2].name.text, "Star 201")
+eq(U.cells[B + 2].name.color[1], 0.35)
+eq(U.cells[B + 32 + 1].name.text, "クラスマスタリー", "Class Mastery starts the next column")
 U:MoveColumn(1)
 eq(U.column, 2)
-eq(U.gear[1].name.text, "Test helm", "equipment stays while the statistics have focus")
-contains(U.cells[4 * 32 + 1].name.text, "体力")
+eq(U.gear[1].name.text, "Test helm", "equipment stays while the build summary has focus")
+U:MoveRow(13)
+eq(U.data[2][U.selected[2]].key, "mastery")
+eq(U.highlight.x, 40 + 5 * 275, "highlight follows the column break")
+-- Page 2 onwards: the detailed statistics take the full width.
 U:MoveColumn(1)
 eq(U.column, 3)
 eq(U.gear[1].name.text, "", "equipment rows clear when another area is selected")
+contains(U.cells[1].name.text, "Advanced")
+-- The description continues with L2/R2, one whole window at a time.
+contains(U.detailTitle.text, "説明 1/3")
+U:PageDetail(1); eq(U.detailScroll:GetVerticalScroll(), U.detailScroll.height)
+contains(U.detailTitle.text, "説明 2/3")
+U:PageDetail(10); eq(U.detailScroll:GetVerticalScroll(), 2 * U.detailScroll.height)
+U:PageDetail(-10); eq(U.detailScroll:GetVerticalScroll(), 0)
+U:MoveRow(1); eq(U.detailScroll:GetVerticalScroll(), 0, "a new entry starts at its first line")
+U:MoveColumn(1); eq(U.column, 4)
 contains(U.cells[1].name.text, "スロット")
-U:MoveColumn(2)
-U:MoveColumn(-1); eq(U.column, 4)
+U:MoveColumn(-4); eq(U.column, 5)
 U:MoveColumn(1); eq(U.column, 1)
 U:MoveRow(-100); eq(U.selected[1], 1)
 U:MoveRow(1000); eq(U.selected[1], #U.data[1])
 eq(U.offsets[1], 0, "every equipment row is on screen at once")
-U:MoveColumn(2); U:MoveRow(1000)
-eq(U.offsets[3], 0, "the whole CP list is on screen at once")
-U:MoveGridColumn(-1); eq(U.selected[3], math.max(1, #U.data[3] - 32))
+U:MoveColumn(3); U:MoveRow(1000)
+eq(U.offsets[4], 0, "the whole CP list is on screen at once")
+U:MoveGridColumn(-1); eq(U.selected[4], math.max(1, #U.data[4] - 32))
 -- More entries than the grid holds is the one case that still pages.
-U.column = 2
-U.data[2] = {}
-for i = 1, 300 do U.data[2][i] = {key = "over" .. i, name = "entry " .. i, value = "", detail = "d"} end
+U.column = 3
+U.data[3] = {}
+for i = 1, 300 do U.data[3][i] = {key = "over" .. i, name = "entry " .. i, value = "", detail = "d"} end
 U:MoveRow(1000)
-eq(U.selected[2], 300)
-eq(U.offsets[2], 300 - U:PageSize(2))
-eq(U.cells[4 * 32 + U:PageSize(2)].name.text, "entry 300")
+eq(U.selected[3], 300)
+eq(U.offsets[3], 300 - U:PageSize(3))
+eq(U.cells[U:PageSize(3)].name.text, "entry 300")
 U:Refresh()
-local selectedKey = U.data[3][U.selected[3]].key
-U:Refresh(); eq(U.data[3][U.selected[3]].key, selectedKey)
+local selectedKey = U.data[4][U.selected[4]].key
+U:Refresh(); eq(U.data[4][U.selected[4]].key, selectedKey)
 GuiRoot:SetDimensions(1280, 720); U:Resize(); assert(U.root.scale < 0.7)
 
 local events, updates = {}, {}
