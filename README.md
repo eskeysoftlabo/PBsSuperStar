@@ -4,7 +4,7 @@ Puts your character's equipment, detailed statistics, Champion Points and skills
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.3.0 (API 101050)
+- **Version:** 0.3.1 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
@@ -78,7 +78,7 @@ skill: past what a page holds the area pages, and its title says which range is 
 | action | PS / Xbox |
 | --- | --- |
 | choose an area, then an entry | D-pad left/right, up/down |
-| jump a whole column of entries | L1 / R1 — LB / RB |
+| next / previous column on screen | L1 / R1 — LB / RB |
 | the rest of a long description | L2 / R2 — LT / RT |
 | refresh now | the 再取得 button on the screen |
 | show unearned CP and skills too | the 取得済み / 全項目 button |
@@ -108,6 +108,15 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.3.1: L1/R1 crosses from equipment into the build
+
+L1/R1 used to jump a column *within* the selected area, and equipment is a single column, so on
+the first page it only sent the selection to the first or last slot and never reached the build
+beside it. On the first page it now walks the three columns on screen — equipment, then the
+build's two columns — and keeps the row, which all three share. A blank separator row lands on
+the entry above it. On the grid pages it still jumps one grid column. D-pad left/right still
+switches areas.
 
 ## 0.3.0: renamed to PB’s UltraDetailedStats
 

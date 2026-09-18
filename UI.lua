@@ -458,6 +458,7 @@ function U:Render()
     if merged then
         self:RenderGear(self.data[1], self:Offset(1))
         cellFor = self:RenderBuild(self.data[2], self:Offset(2))
+        self.buildCellFor = cellFor
         self:RenderGrid(nil, 0)
     else
         self:RenderGear(nil, 0)
@@ -549,9 +550,39 @@ function U:PageDetail(delta)
     self.detailOffset = math.max(0, math.min(self:DetailPages() - 1, (self.detailOffset or 0) + delta))
     self:Render()
 end
+-- On the first page L1/R1 walks the columns on screen — equipment, then the build's two
+-- columns — keeping the row, since all three share the same 30-point rows. On the grid pages it
+-- jumps one grid column within the area.
 function U:MoveGridColumn(delta)
     if not self.ready then return end
-    self:MoveRow(delta * (self.column == 1 and GEAR_ROWS or (self.column == 2 and BUILD_ROWS) or GRID_ROWS))
+    if self.column > 2 then return self:MoveRow(delta * GRID_ROWS) end
+    local row, column
+    if self.column == 1 then
+        row, column = self.selected[1] - self.offsets[1] - 1, -1
+    else
+        local cell = (self.buildCellFor or {})[self.selected[2]] or 1
+        row, column = (cell - 1) % BUILD_ROWS, math.floor((cell - 1) / BUILD_ROWS)
+    end
+    local target = column + delta
+    if target < -1 or target >= BUILD_COLUMNS then return end
+    if target == -1 then
+        self.column = 1
+        self.selected[1] = math.max(1, math.min(#self.data[1], self.offsets[1] + row + 1))
+        return self:Render()
+    end
+    -- The entry on that row of the target column, or the nearest one above it (a blank
+    -- separator row has none), or failing that the column's first entry.
+    local best, bestRow
+    for n, cell in pairs(self.buildCellFor or {}) do
+        local r, c = (cell - 1) % BUILD_ROWS, math.floor((cell - 1) / BUILD_ROWS)
+        if c == target then
+            local better = not best or (r <= row and (bestRow > row or r > bestRow)) or (bestRow > row and r < bestRow)
+            if better then best, bestRow = n, r end
+        end
+    end
+    if not best then return end
+    self.column, self.selected[2] = 2, best
+    self:Render()
 end
 function U:Keybinds()
     local group = {alignment = KEYBIND_STRIP_ALIGN_LEFT}
