@@ -4,7 +4,7 @@ Puts your character's equipment, detailed statistics, Champion Points and skills
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.2.11 (API 101050)
+- **Version:** 0.2.12 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
@@ -107,6 +107,14 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.2.12: larger type in the header band
+
+The band across the top had room to spare, so its type went up: the character line from 21 to
+24, the Magicka / Health / Stamina rows from 19 to 23 on 36-point rows with larger icons, the
+combat numbers from 18 to 21, the skill and Champion Point totals from 21 to 24, the tab titles
+from 20 to 22. The skill bar icons went from 32 to 36 points and their names from 13 to 15. The
+band is still the same height, so nothing below it moved.
 
 ## 0.2.11: the keybind strip moves out of the way
 

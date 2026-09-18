@@ -33,8 +33,8 @@ local GEAR_ROWS, GEAR_Y, GEAR_H, GEAR_W = 17, 308, 34, 1094
 -- the build, which is short, gets two columns of large cells of its own beside it.
 local BUILD_X, BUILD_Y, BUILD_W, BUILD_H, BUILD_ROWS, BUILD_COLUMNS = 1140, 308, 412, 34, 17, 2
 local MEDIUM, BOLD = "$(GAMEPAD_MEDIUM_FONT)|20|soft-shadow-thin", "$(GAMEPAD_BOLD_FONT)|20|soft-shadow-thin"
-local BAR_X, BAR_PITCH = 534, 141
-local COMBAT_X, COMBAT_W = {1462, 1560, 1746, 1850}, {92, 180, 98, 108}
+local BAR_X, BAR_PITCH = 566, 140
+local COMBAT_X, COMBAT_W = {1486, 1582, 1762, 1858}, {92, 176, 92, 100}
 local DETAIL_Y, DETAIL_SPACE = 932, 96
 local function label(parent, x, y, w, h, size)
     local c = WINDOW_MANAGER:CreateControl(nil, parent, CT_LABEL)
@@ -105,37 +105,37 @@ function U:BuildTasks()
     task(function()
         self.nav = {}
         for i, title in ipairs(TITLES) do
-            self.nav[i] = line(root, 844 + (i - 1) * 224, 38, 220, 30, 20)
+            self.nav[i] = line(root, 844 + (i - 1) * 224, 36, 220, 32, 22)
             self.nav[i]:SetText(title)
         end
-        self.identity = line(root, 42, 90, 1300, 28, 21)
-        self.status = line(root, 1400, 96, 560, 20, 14)
+        self.identity = line(root, 42, 88, 1300, 32, 24)
+        self.status = line(root, 1430, 94, 530, 22, 16)
         self.status:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
         self.status:SetColor(unpack(MUTED))
-        self.points = line(root, 1400, 240, 560, 28, 21)
+        self.points = line(root, 1430, 226, 530, 32, 24)
         self.points:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
-        self.cpTotal = line(root, 1400, 268, 560, 28, 21)
+        self.cpTotal = line(root, 1430, 260, 530, 32, 24)
         self.cpTotal:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
     end)
     task(function()
         self.resources = {}
         -- Right-aligned columns; a single spaced string cannot line up in a proportional font.
-        local columns = {{"spent", 186, 58, "配分"}, {"max", 250, 100, "最大値"}, {"regen", 356, 104, "戦闘中の再生"}}
+        local columns = {{"spent", 196, 60, "配分"}, {"max", 262, 118, "最大値"}, {"regen", 386, 120, "戦闘中の再生"}}
         for _, column in ipairs(columns) do
-            local head = line(root, column[2], 124, column[3], 18, 14)
+            local head = line(root, column[2], 124, column[3], 20, 16)
             head:SetText(column[4])
             head:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
             head:SetColor(unpack(MUTED))
         end
         for i, resource in ipairs({{"magicka", "マジカ", BLUE}, {"health", "体力", RED}, {"stamina", "スタミナ", GREEN}}) do
-            local y = 142 + (i - 1) * 30
-            local img = texture(root, 44, y + 1, 24)
+            local y = 148 + (i - 1) * 36
+            local img = texture(root, 44, y + 2, 28)
             img:SetTexture("EsoUI/Art/CharacterWindow/Gamepad/gp_characterSheet_" .. resource[1] .. "Icon.dds")
-            local name = line(root, 76, y, 104, 26, 19)
+            local name = line(root, 80, y, 112, 32, 23)
             name:SetText(resource[2]); name:SetColor(unpack(resource[3]))
             local values = {}
             for _, column in ipairs(columns) do
-                values[column[1]] = line(root, column[2], y, column[3], 26, 19)
+                values[column[1]] = line(root, column[2], y, column[3], 32, 23)
                 values[column[1]]:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
             end
             self.resources[i] = values
@@ -148,33 +148,33 @@ function U:BuildTasks()
         local barIndex = b
         task(function()
             local b = barIndex
-            local y = 128 + (b - 1) * 58
+            local y = 126 + (b - 1) * 66
             self.bars[b] = {slots = {}, names = {}}
-            self.bars[b].title = line(root, 480, y + 6, 50, 24, 17)
+            self.bars[b].title = line(root, 516, y + 6, 48, 28, 20)
             for s = 1, 6 do
                 local x = BAR_X + (s - 1) * BAR_PITCH + (s == 6 and 8 or 0)
-                background(root, x - 1, y - 1, 34, 34, 0.3, 0.32, 0.35, 0.7)
-                self.bars[b].slots[s] = texture(root, x, y, 32)
+                background(root, x - 1, y - 1, 38, 38, 0.3, 0.32, 0.35, 0.7)
+                self.bars[b].slots[s] = texture(root, x, y, 36)
                 -- The icon alone does not say which skill it is; the name goes under it.
-                self.bars[b].names[s] = line(root, x - 4, y + 34, 138, 18, 13)
+                self.bars[b].names[s] = line(root, x - 2, y + 38, 138, 22, 15)
                 self.bars[b].names[s]:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
             end
         end)
     end
     task(function()
         for i, title in ipairs({"威力", "クリ値（率）", "貫通", "耐性"}) do
-            local head = line(root, COMBAT_X[i], 124, COMBAT_W[i], 18, 13)
+            local head = line(root, COMBAT_X[i], 124, COMBAT_W[i], 20, 15)
             head:SetText(title)
             head:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
             head:SetColor(unpack(MUTED))
         end
         self.offense = {}
         for i, color in ipairs({BLUE, GREEN}) do
-            local y = 146 + (i - 1) * 30
-            line(root, 1400, y, 56, 26, 18):SetText(i == 1 and "呪文" or "武器")
+            local y = 148 + (i - 1) * 36
+            line(root, 1430, y, 52, 30, 21):SetText(i == 1 and "呪文" or "武器")
             self.offense[i] = {}
             for j = 1, 4 do
-                self.offense[i][j] = line(root, COMBAT_X[j], y, COMBAT_W[j], 26, 18)
+                self.offense[i][j] = line(root, COMBAT_X[j], y, COMBAT_W[j], 30, 21)
                 self.offense[i][j]:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
                 self.offense[i][j]:SetColor(unpack(color))
             end
@@ -182,7 +182,7 @@ function U:BuildTasks()
     end)
     task(function()
         background(root, 36, 302, 1928, 1, 0.65, 0.67, 0.73, 0.3)
-        self.listTitle = line(root, 44, 270, 900, 26, 17)
+        self.listTitle = line(root, 44, 266, 900, 28, 19)
         -- One highlight, moved to the selected entry, instead of one behind every row.
         self.highlight = background(root, GRID_X, GRID_Y, GRID_W, GRID_H, 0.35, 0.37, 0.43, 0.32)
         self.gear = {}
