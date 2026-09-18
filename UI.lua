@@ -402,6 +402,15 @@ function U:RenderBuild(entries, offset)
         local nameColor, valueColor = colors(entry)
         local font = entry and entry.header and BOLD or MEDIUM
         if cell.font ~= font then cell.name:SetFont(font); cell.font = font end
+        -- A section title is short and its value long (取得 2 / 保有 2); an entry is the reverse.
+        local wide = entry and entry.header or false
+        if cell.wide ~= wide then
+            cell.wide = wide
+            local x, y = BUILD_X + math.floor((n - 1) / BUILD_ROWS) * BUILD_W, BUILD_Y + ((n - 1) % BUILD_ROWS) * BUILD_H
+            cell.name:SetWidth(wide and 196 or 276)
+            cell.value:SetAnchor(TOPLEFT, self.root, TOPLEFT, x + (wide and 232 or 312), y + 5)
+            cell.value:SetWidth(wide and 172 or 92)
+        end
         icon(cell.icon, entry and entry.icon)
         cell.name:SetText(entry and entry.name or "")
         cell.name:SetColor(unpack(nameColor))
@@ -471,13 +480,14 @@ function U:Render()
     local key = self.column .. ":" .. (entry and entry.key or "")
     local text = entry and entry.detail or "この項目に表示できる情報はありません。"
     if key ~= self.detailKey or text ~= self.detailText then
-        if key ~= self.detailKey then self.detailScroll:SetVerticalScroll(0) end
+        if key ~= self.detailKey then self.detailOffset = 0 end
         self.detailKey, self.detailText = key, text
         self.detail:SetText(text)
-        self.detail:SetHeight(self.detail:GetTextHeight())
     end
-    local pages = math.max(1, math.ceil(self.detail:GetHeight() / self.detailPage))
-    local current = math.floor(self.detailScroll:GetVerticalScroll() / self.detailPage) + 1
+    local pages = self:DetailPages()
+    self.detailOffset = math.min(self.detailOffset or 0, pages - 1)
+    self.detail:SetAnchor(TOPLEFT, self.detailScroll, TOPLEFT, 0, -self.detailOffset * self.detailPage)
+    local current = self.detailOffset + 1
     self.detailTitle:SetText((entry and (entry.name .. "   " .. entry.value) or "詳細") ..
         (pages > 1 and string.format("   （説明 %d/%d・L2/R2で続き）", current, pages) or ""))
 end
@@ -492,13 +502,19 @@ function U:MoveRow(delta)
     self.selected[self.column] = math.max(1, math.min(#self.data[self.column], self.selected[self.column] + delta))
     self:Render()
 end
--- Turns the description by one whole window of lines.
+-- The text height is measured when it is needed, not right after SetText: the client lays text
+-- out a frame later, and a height read too early made every description one page long.
+function U:DetailPages()
+    local height = self.detail:GetTextHeight()
+    self.detail:SetHeight(height)
+    return math.max(1, math.ceil(height / self.detailPage))
+end
+
+-- Turns the description by one whole window of lines. The window (a scroll control) only clips;
+-- the text is moved by its anchor, so nothing depends on the scroll control's own extents.
 function U:PageDetail(delta)
     if not self.ready then return end
-    local pages = math.max(1, math.ceil(self.detail:GetHeight() / self.detailPage))
-    local current = math.floor(self.detailScroll:GetVerticalScroll() / self.detailPage)
-    local target = math.max(0, math.min(pages - 1, current + delta))
-    self.detailScroll:SetVerticalScroll(target * self.detailPage)
+    self.detailOffset = math.max(0, math.min(self:DetailPages() - 1, (self.detailOffset or 0) + delta))
     self:Render()
 end
 function U:MoveGridColumn(delta)

@@ -9,14 +9,20 @@ end
 local function contains(value, part) assert(value:find(part, 1, true), value); checks = checks + 1 end
 function zo_strformat(_, s) return s end
 function zo_round(n) return math.floor(n + 0.5) end
-function GetString(_, id) return tostring(id) end
+-- Enum value 0 (*_NONE) names a placeholder string the game never shows, as in the client.
+function GetString(_, id) if id == 0 then return "翻訳しない" end return tostring(id) end
+ARMORTYPE_NONE, WEAPONTYPE_NONE, ITEM_TRAIT_TYPE_NONE = 0, 0, 0
 BAG_WORN, LINK_STYLE_DEFAULT = 1, 0
 EQUIP_SLOT_HEAD, EQUIP_SLOT_HAND, EQUIP_SLOT_BACKUP_MAIN = 0, 3, 20
 function GetItemLink(_, slot) return slot == 0 and "item-link" or "" end
 function GetItemLinkTraitInfo() return 1, "trait" end
 function GetItemLinkEnchantInfo() return false, "enchant", "enchantment description" end
-function GetItemLinkSetInfo() return true, "set", 2, 3, 5, 99, 1 end
-function GetItemLinkSetBonusInfo(_, equipped, index) eq(equipped, true); return index + 1, "bonus " .. index end
+function GetItemLinkSetInfo() return true, "set", 3, 3, 5, 99, 1 end
+function GetItemLinkSetBonusInfo(_, equipped, index)
+    eq(equipped, true)
+    if index == 3 then return 5, "(5 items) bonus 3", false end
+    return index + 1, index == 2 and "(3 items) bonus 2" or ("bonus " .. index), false
+end
 ITEM_QUALITY = 5
 function GetItemLinkDisplayQuality() return ITEM_QUALITY end
 function GetItemLinkRequiredLevel() return 50 end
@@ -121,6 +127,15 @@ eq(#gear, 3)
 eq(find(gear, "HEAD").icon, "helm.dds")
 contains(find(gear, "HEAD").detail, "enchantment description")
 contains(find(gear, "HEAD").detail, "bonus 2")
+local helm = find(gear, "HEAD").detail
+assert(not helm:find("翻訳しない", 1, true), "no placeholder type names: " .. helm)
+contains(helm, "セット効果：set（4/5）")
+contains(helm, "\n(2) bonus 1")
+contains(helm, "\n(3 items) bonus 2")
+assert(not helm:find("(3) (3 items)", 1, true), "the game's own count is not doubled")
+contains(helm, "|c9EA6B0(5 items) bonus 3|r")
+contains(helm, "\n防御 1500")
+assert(not helm:find("武器威力", 1, true), "armour has no weapon power line")
 eq(find(gear, "HEAD").itemName, "Test helm")
 eq(find(gear, "HEAD").level, "CP 160")
 eq(find(gear, "HEAD").setText, "Set 4/5")
@@ -217,7 +232,7 @@ function Control:SetWidth(w) self.width = w end
 function Control:SetHeight(h) self.height = h end
 function Control:GetHeight() return self.height end
 function Control:SetText(s) self.text = s end
-function Control:GetTextHeight() return 200 end
+function Control:GetTextHeight() return self.textHeight or 200 end
 function Control:SetHidden(v) self.hidden = v end
 function Control:SetScale(v) self.scale = v end
 function Control:SetVerticalScroll(v) self.scroll = v end
@@ -260,6 +275,9 @@ eq(C[1].name.color[1], 0.35, "combat CP is blue")
 eq(C[2].name.text, "Star 201")
 eq(C[2].name.color[1], 0.35)
 eq(C[18].name.text, "クラススキルライン", "the selected class lines start the next column")
+eq(C[21].value.width, 172, "a section title's value has room for 取得 2 / 保有 2")
+eq(C[21].value.text, "取得 2 / 保有 2")
+eq(C[22].value.width, 92, "an entry's value keeps the narrow field")
 eq(C[19].name.text, "Class line")
 eq(C[20].name.text, "", "a blank row before Class Mastery")
 eq(C[21].name.text, "クラスマスタリー", "Class Mastery directly after the class lines")
@@ -288,11 +306,19 @@ eq(U.gear[1].name.text, "", "equipment rows clear when another area is selected"
 contains(U.cells[1].name.text, "Advanced")
 -- The description continues with L2/R2, one whole window at a time.
 contains(U.detailTitle.text, "説明 1/3")
-U:PageDetail(1); eq(U.detailScroll:GetVerticalScroll(), U.detailScroll.height)
+local page = U.detailScroll.height
+U:PageDetail(1); eq(U.detail.y, -page, "R2 moves the text up one window")
 contains(U.detailTitle.text, "説明 2/3")
-U:PageDetail(10); eq(U.detailScroll:GetVerticalScroll(), 2 * U.detailScroll.height)
-U:PageDetail(-10); eq(U.detailScroll:GetVerticalScroll(), 0)
-U:MoveRow(1); eq(U.detailScroll:GetVerticalScroll(), 0, "a new entry starts at its first line")
+U:PageDetail(10); eq(U.detail.y, -2 * page)
+U:PageDetail(-10); eq(U.detail.y, 0)
+U:MoveRow(1); eq(U.detail.y, 0, "a new entry starts at its first line")
+-- The client lays text out a frame after SetText: a height read then is one line. R2 must
+-- measure again when pressed, not trust the stale value.
+U.detail.textHeight = 26; U:MoveRow(1)
+eq(U.detail.y, 0)
+U.detail.textHeight = 200
+U:PageDetail(1); eq(U.detail.y, -page, "R2 works once the text has been laid out")
+U.detail.textHeight = nil
 U:MoveColumn(1); eq(U.column, 4)
 contains(U.cells[1].name.text, "スロット")
 U:MoveColumn(-4); eq(U.column, 5)

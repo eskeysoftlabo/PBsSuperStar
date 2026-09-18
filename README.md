@@ -4,7 +4,7 @@ Puts your character's equipment, detailed statistics, Champion Points and skills
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.2.13 (API 101050)
+- **Version:** 0.2.14 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
@@ -107,6 +107,23 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.2.14: set text, L2/R2, Class Mastery title
+
+- **翻訳しない** in an item's description was the game's placeholder string for "no type":
+  armour asked for its weapon type and jewellery for its armour type, and `GetString` on the
+  `*_NONE` value returns a "do not translate" stub the game itself never displays. Types, trait,
+  enchantment, armour and weapon power are now only listed when the item has them.
+- The set block reads **セット効果：name（4/5）** like the game's tooltip. Each bonus is the
+  game's own text, which already carries its item count — it had been doubled as
+  `(2) (2 アイテム) …` — and a bonus not yet reached is dimmed.
+- **L2/R2 did nothing.** The description's height was read straight after `SetText`, before the
+  client had laid the text out, so every description measured one page long and there was
+  nowhere to turn to. It is now measured when L2/R2 is pressed and on every refresh, and the text
+  is moved by its own anchor inside the clipping window rather than through the scroll control's
+  extents, which depended on that same height.
+- Section titles in the build give their value 172 points instead of 92, so
+  **取得 2 / 保有 2** is no longer cut to 取得2/….
 
 ## 0.2.13: the selected class skill lines
 
