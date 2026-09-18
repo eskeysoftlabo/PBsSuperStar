@@ -317,7 +317,10 @@ ZO_GamepadEntryData = {New = function(_, name)
         SetEnabled = function(self, value) self.enabled = value end}
 end}
 local binds = 0
-KEYBIND_STRIP = {AddKeybindButtonGroup = function() binds = binds + 1 end, RemoveKeybindButtonGroup = function() binds = binds - 1 end}
+local GAMEPAD_STRIP = {nameFont = "ZoFontGamepad34", keyFont = "ZoFontGamepad22", yAnchorOffset = -53}
+KEYBIND_STRIP = {AddKeybindButtonGroup = function() binds = binds + 1 end, RemoveKeybindButtonGroup = function() binds = binds - 1 end,
+    style = GAMEPAD_STRIP, GetStyle = function(self) return self.style end, SetStyle = function(self, style) self.style = style end}
+ZO_KeybindStripGamepadBackground = control(); ZO_KeybindStripGamepadBackground:SetDimensions(1920, 90)
 SLASH_COMMANDS = {}
 SCENE_MANAGER = {Push = function(_, name) eq(name, "pbsSuperStar") end}
 -- A fresh UI must stay unallocated at addon load, including without coroutines.
@@ -336,12 +339,19 @@ eq(controlsCreated, 0, "addon load must not create dashboard controls")
 events.PBsSuperStar3(); eq(controlsCreated, 0, "resize before first open")
 PBsSuperStar:Open()
 PBsSuperStar.scene.changed(nil, SCENE_SHOWING)
+-- The keybind strip is shorter and lower while the screen is open, and restored after.
+eq(KEYBIND_STRIP.style.yAnchorOffset, -23, "strip moved down")
+eq(KEYBIND_STRIP.style.nameFont, "ZoFontGamepad27", "strip labels smaller")
+eq(KEYBIND_STRIP.style.keyFont, "ZoFontGamepad22", "everything else about the style is kept")
+eq(ZO_KeybindStripGamepadBackground.height, 60, "strip background shorter")
 eq(controlsCreated, 0, "show event must defer construction")
 eq(updates.PBsSuperStarRefresh, nil)
 U:MoveRow(1); U:MoveColumn(1); U:MoveGridColumn(1); U:Refresh()
 updates.PBsSuperStarBuildUI()
 assert(controlsCreated > 0 and not U.ready)
 PBsSuperStar.scene.changed(nil, SCENE_HIDING)
+eq(KEYBIND_STRIP.style, GAMEPAD_STRIP, "the game's own style comes back on close")
+eq(ZO_KeybindStripGamepadBackground.height, 90)
 eq(updates.PBsSuperStarBuildUI, nil, "close pauses construction")
 eq(updates.PBsSuperStarRefresh, nil)
 eq(binds, 0)

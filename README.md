@@ -4,7 +4,7 @@ Puts your character's equipment, detailed statistics, Champion Points and skills
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.2.10 (API 101050)
+- **Version:** 0.2.11 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
@@ -107,6 +107,15 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.2.11: the keybind strip moves out of the way
+
+The game's keybind strip — 戻る, 再取得, 取得済み / 全項目 — sat over the last lines of the
+description. While this screen is open the strip now uses a compact copy of its own style: labels
+at `ZoFontGamepad27` instead of 34, anchored 30 points lower, with its background 30 points
+shorter. `KEYBIND_STRIP:SetStyle` is the strip's own public way to restyle it. The previous style
+and background height come back when the screen closes, and the style is only put back if
+nothing else has changed it in the meantime.
 
 ## 0.2.10: larger type on the first page
 
@@ -249,6 +258,7 @@ On-device checklist, still to be completed:
 - equipment, attributes, CP, Class Mastery and skills match the game's own screens
 - at 720p and with the largest UI scale, the description pane's last line and the controls hint are
   fully drawn and clear of the keybind strip
+- the keybind strip is back to its usual size and position in the menus after closing the screen
 - the 14-point grid cells are legible on a TV at a normal viewing distance, and skill names of
   ordinary length are not truncated in a 190-point cell
 - the bar skill names fit their 138-point slot, or are cut short enough to still identify
