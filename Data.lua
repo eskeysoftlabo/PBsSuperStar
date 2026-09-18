@@ -46,37 +46,44 @@ function D.Equipment()
                 -- The *_NONE values name placeholder strings (翻訳しない, "do not translate") that the
                 -- game never shows, so a jewel has no armour type line and armour no weapon type.
                 local hasTrait = trait and trait ~= (ITEM_TRAIT_TYPE_NONE or 0)
-                local detail = {link, quality .. "  Lv " .. GetItemLinkRequiredLevel(link) .. " / CP " .. GetItemLinkRequiredChampionPoints(link)}
-                if hasTrait then detail[#detail + 1] = "特性：" .. GetString("SI_ITEMTRAITTYPE", trait) .. "  " .. (traitDescription or "") end
-                if enchant and enchant ~= "" then detail[#detail + 1] = clean(enchant) .. "  " .. (enchantDescription or "") end
-                detail[#detail + 1] = "状態：" .. number(GetItemCondition(BAG_WORN, id)) .. "%"
+                -- Two blocks, shown side by side: the item itself, and its set. The item name is
+                -- already the description's title, so it is not repeated here.
+                local detail = {}
+                if hasTrait then detail[#detail + 1] = "特性：" .. GetString("SI_ITEMTRAITTYPE", trait) .. "　" .. (traitDescription or "") end
+                if enchant and enchant ~= "" then detail[#detail + 1] = "付呪：" .. clean(enchant) .. "　" .. (enchantDescription or "") end
+                -- Short facts share one line, each set apart so they cannot read as one word.
+                local facts = {quality}
+                local cp = GetItemLinkRequiredChampionPoints(link)
+                facts[#facts + 1] = cp > 0 and ("CP " .. cp) or ("Lv " .. GetItemLinkRequiredLevel(link))
+                facts[#facts + 1] = "状態 " .. number(GetItemCondition(BAG_WORN, id)) .. "%"
                 local armor, power = GetItemLinkArmorRating(link, true), GetItemLinkWeaponPower(link)
-                if armor > 0 then detail[#detail + 1] = "防御 " .. armor end
-                if power > 0 then detail[#detail + 1] = "武器威力 " .. power end
-                local kinds, armorType, weaponType = {}, GetItemLinkArmorType(link), GetItemLinkWeaponType(link)
-                if armorType and armorType ~= (ARMORTYPE_NONE or 0) then kinds[#kinds + 1] = GetString("SI_ARMORTYPE", armorType) end
-                if weaponType and weaponType ~= (WEAPONTYPE_NONE or 0) then kinds[#kinds + 1] = GetString("SI_WEAPONTYPE", weaponType) end
-                if #kinds > 0 then detail[#detail + 1] = table.concat(kinds, "  ") end
+                if armor > 0 then facts[#facts + 1] = "防御 " .. armor end
+                if power > 0 then facts[#facts + 1] = "武器威力 " .. power end
+                local armorType, weaponType = GetItemLinkArmorType(link), GetItemLinkWeaponType(link)
+                if armorType and armorType ~= (ARMORTYPE_NONE or 0) then facts[#facts + 1] = GetString("SI_ARMORTYPE", armorType) end
+                if weaponType and weaponType ~= (WEAPONTYPE_NONE or 0) then facts[#facts + 1] = GetString("SI_WEAPONTYPE", weaponType) end
                 if DoesItemLinkHaveEnchantCharges(link) then
-                    detail[#detail + 1] = "付呪チャージ：" .. GetItemLinkNumEnchantCharges(link) .. "/" .. GetItemLinkMaxEnchantCharges(link)
+                    facts[#facts + 1] = "チャージ " .. GetItemLinkNumEnchantCharges(link) .. "/" .. GetItemLinkMaxEnchantCharges(link)
                 end
+                detail[#detail + 1] = table.concat(facts, "　／　")
+                local setDetail
                 if hasSet then
                     -- As the game's own tooltip (ZO_Tooltip:AddSet): the bonus text already carries its
                     -- item count, and a bonus not yet reached is drawn dimmed.
                     local total = math.min(equipped + (perfected or 0), maxEquipped)
-                    detail[#detail + 1] = "セット効果：" .. clean(setName) .. string.format("（%d/%d）", total, maxEquipped)
+                    setDetail = {"セット効果：" .. clean(setName) .. string.format("（%d/%d）", total, maxEquipped)}
                     for i = 1, bonuses do
                         local required, description, perfectedBonus = GetItemLinkSetBonusInfo(link, true, i)
                         if not (description:find("^%(") or description:find("^（")) then description = "(" .. required .. ") " .. description end
                         local active = (perfectedBonus and (perfected or 0) or total) >= required
-                        detail[#detail + 1] = active and description or ("|c9EA6B0" .. description .. "|r")
+                        setDetail[#setDetail + 1] = active and description or ("|c9EA6B0" .. description .. "|r")
                     end
                 end
                 row(rows, slot[1], slot[2] .. "：" .. clean(GetItemLinkName(link)), "", table.concat(detail, "\n"), GetItemInfo(BAG_WORN, id))
                 local entry = rows[#rows]
+                entry.detailSet = setDetail and table.concat(setDetail, "\n")
                 entry.itemName = clean(GetItemLinkName(link))
                 entry.quality = GetItemLinkDisplayQuality(link)
-                local cp = GetItemLinkRequiredChampionPoints(link)
                 entry.level = cp > 0 and ("CP " .. cp) or ("Lv " .. GetItemLinkRequiredLevel(link))
                 entry.subline = (hasTrait and GetString("SI_ITEMTRAITTYPE", trait) or "") .. "   " .. clean(enchant)
                 entry.setText = hasSet and ("Set " .. (equipped + (perfected or 0)) .. "/" .. maxEquipped) or ""

@@ -126,16 +126,18 @@ local gear = D.Equipment()
 eq(#gear, 3)
 eq(find(gear, "HEAD").icon, "helm.dds")
 contains(find(gear, "HEAD").detail, "enchantment description")
-contains(find(gear, "HEAD").detail, "bonus 2")
-local helm = find(gear, "HEAD").detail
-assert(not helm:find("翻訳しない", 1, true), "no placeholder type names: " .. helm)
-contains(helm, "セット効果：set（4/5）")
-contains(helm, "\n(2) bonus 1")
-contains(helm, "\n(3 items) bonus 2")
-assert(not helm:find("(3) (3 items)", 1, true), "the game's own count is not doubled")
-contains(helm, "|c9EA6B0(5 items) bonus 3|r")
-contains(helm, "\n防御 1500")
-assert(not helm:find("武器威力", 1, true), "armour has no weapon power line")
+local helm, helmSet = find(gear, "HEAD").detail, find(gear, "HEAD").detailSet
+assert(not (helm .. helmSet):find("翻訳しない", 1, true), "no placeholder type names: " .. helm)
+assert(not helm:find("item-link", 1, true), "the item name is the title, not repeated")
+contains(helm, "状態 99%　／　防御 1500　／　1", "short facts share a line, clearly separated")
+assert(not helm:find("武器威力", 1, true), "armour has no weapon power")
+assert(not helm:find("セット", 1, true), "the set is its own block")
+contains(helmSet, "セット効果：set（4/5）")
+contains(helmSet, "\n(2) bonus 1")
+contains(helmSet, "\n(3 items) bonus 2")
+assert(not helmSet:find("(3) (3 items)", 1, true), "the game's own count is not doubled")
+contains(helmSet, "|c9EA6B0(5 items) bonus 3|r")
+eq(find(gear, "HAND").detailSet, nil)
 eq(find(gear, "HEAD").itemName, "Test helm")
 eq(find(gear, "HEAD").level, "CP 160")
 eq(find(gear, "HEAD").setText, "Set 4/5")
@@ -223,7 +225,12 @@ D.Equipment = original
 -- UI controls fail on unknown methods, catching typos rather than absorbing them.
 local Control = {}
 function Control:SetColor(r, g, b, a) self.color = {r, g, b, a} end
-function Control:SetAnchor(_, _, _, x, y) self.x, self.y = x, y end
+function Control:SetAnchor(_, _, _, x, y)
+    assert(not self.anchored, "re-anchoring without ClearAnchors adds a second anchor")
+    self.x, self.y, self.anchored = x, y, true
+end
+function Control:ClearAnchors() self.anchored = false end
+function Control:IsHidden() return self.hidden or false end
 for _, method in ipairs({"SetFont", "SetHorizontalAlignment", "SetMaxLineCount", "SetWrapMode", "SetCenterColor", "SetEdgeColor", "SetTexture"}) do Control[method] = function() end end
 function Control:GetFontHeight() return 26 end
 function Control:SetDimensions(w, h) self.width, self.height = w, h end
@@ -264,6 +271,13 @@ GetInterfaceColor, ITEM_QUALITY = nil, 5; U:Refresh()
 eq(U.resources[2].max.text, "30000", "resource columns are separate controls")
 eq(U.offense[1][2].text, "30000 (55.2%)", "critical rating with its chance")
 eq(U.detailScroll.height % 26, 0, "description window is whole lines")
+-- Page 1's description is taller, and equipment shows its set in a column of its own.
+eq(U.detailScroll.y, 860); eq(U.detailScroll.height, 156)
+eq(U.detailSet.hidden, false)
+contains(U.detailSet.text, "セット効果：set（4/5）")
+eq(U.detail.width, 846, "the item block makes room for the set block")
+eq(U.detailSet.x, 886)
+eq(U.detail.height, 0, "description labels size themselves to their text")
 -- Page 1: equipment on the left, the build in two columns of large cells beside it.
 local C = U.buildCells
 eq(#C, 34)
@@ -302,6 +316,8 @@ eq(U.highlight.y, 308)
 -- Page 2 onwards: the detailed statistics take the full width.
 U:MoveColumn(1)
 eq(U.column, 3)
+eq(U.detailScroll.y, 932, "under the grid the description pane is back at the foot")
+eq(U.detailSet.hidden, true); eq(U.detail.width, 1880, "one column when there is no set")
 eq(U.gear[1].name.text, "", "equipment rows clear when another area is selected")
 contains(U.cells[1].name.text, "Advanced")
 -- The description continues with L2/R2, one whole window at a time.

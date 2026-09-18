@@ -28,14 +28,17 @@ local BUILD_UPDATE = P.name .. "BuildUI"
 -- and rows for equipment, which carries an icon and a trait line of its own.
 local GRID_COLUMNS, GRID_ROWS = 7, 32
 local GRID_X, GRID_Y, GRID_W, GRID_H = 40, 308, 275, 18
-local GEAR_ROWS, GEAR_Y, GEAR_H, GEAR_W = 17, 308, 34, 1094
+local GEAR_ROWS, GEAR_Y, GEAR_H, GEAR_W = 17, 308, 30, 1094
 -- Equipment and the build share the first page: equipment keeps the left of the screen, and
 -- the build, which is short, gets two columns of large cells of its own beside it.
-local BUILD_X, BUILD_Y, BUILD_W, BUILD_H, BUILD_ROWS, BUILD_COLUMNS = 1140, 308, 412, 34, 17, 2
+local BUILD_X, BUILD_Y, BUILD_W, BUILD_H, BUILD_ROWS, BUILD_COLUMNS = 1140, 308, 412, 30, 17, 2
 local MEDIUM, BOLD = "$(GAMEPAD_MEDIUM_FONT)|20|soft-shadow-thin", "$(GAMEPAD_BOLD_FONT)|20|soft-shadow-thin"
 local BAR_X, BAR_PITCH = 566, 140
 local COMBAT_X, COMBAT_W = {1486, 1582, 1762, 1858}, {92, 176, 92, 100}
-local DETAIL_Y, DETAIL_SPACE = 932, 96
+-- The description pane: taller on the first page, whose rows are 30 points, than under the
+-- 32-row grid. {divider, text top, text space}.
+local DETAIL_PAGE1, DETAIL_GRID = {826, 860, 170}, {898, 932, 96}
+local DETAIL_SPLIT = 930
 local function label(parent, x, y, w, h, size)
     local c = WINDOW_MANAGER:CreateControl(nil, parent, CT_LABEL)
     c:SetAnchor(TOPLEFT, parent, TOPLEFT, x, y)
@@ -194,13 +197,13 @@ function U:BuildTasks()
             local n = rowIndex
             local y = GEAR_Y + (n - 1) * GEAR_H
             local r = {}
-            r.slot = line(root, 44, y + 4, 122, 27, 20)
-            r.icon = texture(root, 170, y + 4, 26)
-            r.level = line(root, 202, y + 6, 84, 24, 17)
-            r.name = line(root, 292, y + 3, 440, 28, 21)
-            r.subline = line(root, 742, y + 7, 262, 22, 15)
+            r.slot = line(root, 44, y + 2, 122, 27, 20)
+            r.icon = texture(root, 170, y + 2, 26)
+            r.level = line(root, 202, y + 4, 84, 24, 17)
+            r.name = line(root, 292, y + 1, 440, 28, 21)
+            r.subline = line(root, 742, y + 5, 262, 22, 15)
             r.subline:SetColor(unpack(MUTED))
-            r.set = line(root, 1008, y + 6, 96, 24, 17)
+            r.set = line(root, 1008, y + 4, 96, 24, 17)
             r.set:SetColor(unpack(GREEN))
             r.set:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
             self.gear[n] = r
@@ -213,8 +216,8 @@ function U:BuildTasks()
             for n = start, math.min(start + 5, BUILD_COLUMNS * BUILD_ROWS) do
                 local x = BUILD_X + math.floor((n - 1) / BUILD_ROWS) * BUILD_W
                 local y = BUILD_Y + ((n - 1) % BUILD_ROWS) * BUILD_H
-                local cell = {icon = texture(root, x + 2, y + 5, 24), name = line(root, x + 32, y + 4, 276, 27, 20),
-                    value = line(root, x + 312, y + 5, 92, 26, 19)}
+                local cell = {icon = texture(root, x + 2, y + 3, 24), name = line(root, x + 32, y + 2, 276, 27, 20),
+                    value = line(root, x + 312, y + 3, 92, 26, 19)}
                 cell.value:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
                 self.buildCells[n] = cell
             end
@@ -234,21 +237,24 @@ function U:BuildTasks()
         end)
     end
     task(function()
-        background(root, 36, 898, 1928, 1, unpack(GOLD))
-        self.detailTitle = line(root, 44, 904, 1080, 26, 20)
+        self.detailDivider = background(root, 36, DETAIL_GRID[1], 1928, 1, unpack(GOLD))
+        self.detailTitle = line(root, 44, DETAIL_GRID[1] + 6, 1080, 26, 20)
         self.detailTitle:SetColor(unpack(GOLD))
-        local hint = line(root, 1160, 908, 804, 22, 14)
-        hint:SetText("十字キー左右：領域   上下：項目   L1/R1：列を移動   L2/R2：説明の続き")
-        hint:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
-        hint:SetColor(unpack(MUTED))
-        -- A window of whole lines over the full text. L2/R2 moves it by exactly one window,
-        -- so the continuation is reachable and no line is ever drawn cut in half.
+        self.hint = line(root, 1160, DETAIL_GRID[1] + 10, 804, 22, 14)
+        self.hint:SetText("十字キー左右：領域   上下：項目   L1/R1：列を移動   L2/R2：説明の続き")
+        self.hint:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
+        self.hint:SetColor(unpack(MUTED))
+        -- A window of whole lines over the full text; it only clips. L2/R2 moves the text inside
+        -- it by exactly one window, so no line is ever drawn cut in half. The labels keep a height
+        -- of 0, which sizes them to their text: fixing the height to a measured value capped every
+        -- later measurement at that value, and a first measurement of one line stuck for good.
         self.detailScroll = WINDOW_MANAGER:CreateControl("PBsSuperStarDetailScroll", root, CT_SCROLL)
-        self.detailScroll:SetAnchor(TOPLEFT, root, TOPLEFT, 44, DETAIL_Y)
         self.detail = label(self.detailScroll, 0, 0, 1880, 0, 16)
-        local lineHeight = math.floor(self.detail.GetFontHeight and self.detail:GetFontHeight() or 20)
-        self.detailPage = math.max(1, math.floor(DETAIL_SPACE / lineHeight)) * lineHeight
-        self.detailScroll:SetDimensions(1910, self.detailPage)
+        -- Equipment puts its set in a second column beside the item.
+        self.detailSet = label(self.detailScroll, DETAIL_SPLIT - 44, 0, 1880 - (DETAIL_SPLIT - 44), 0, 16)
+        self.detailSet:SetHidden(true)
+        self.detailLine = math.floor(self.detail.GetFontHeight and self.detail:GetFontHeight() or 20)
+        self:PlaceDetail(false)
     end)
 end
 
@@ -408,7 +414,8 @@ function U:RenderBuild(entries, offset)
             cell.wide = wide
             local x, y = BUILD_X + math.floor((n - 1) / BUILD_ROWS) * BUILD_W, BUILD_Y + ((n - 1) % BUILD_ROWS) * BUILD_H
             cell.name:SetWidth(wide and 196 or 276)
-            cell.value:SetAnchor(TOPLEFT, self.root, TOPLEFT, x + (wide and 232 or 312), y + 5)
+            cell.value:ClearAnchors()
+            cell.value:SetAnchor(TOPLEFT, self.root, TOPLEFT, x + (wide and 232 or 312), y + 3)
             cell.value:SetWidth(wide and 172 or 92)
         end
         icon(cell.icon, entry and entry.icon)
@@ -433,6 +440,7 @@ end
 
 function U:HighlightCell(position)
     self.highlight:SetDimensions(GRID_W, GRID_H)
+    self.highlight:ClearAnchors()
     self.highlight:SetAnchor(TOPLEFT, self.root, TOPLEFT,
         GRID_X + math.floor((position - 1) / GRID_ROWS) * GRID_W, GRID_Y + ((position - 1) % GRID_ROWS) * GRID_H)
 end
@@ -462,11 +470,13 @@ function U:Render()
     local position = selected - offset
     if self.column == 1 and position >= 1 and position <= page then
         self.highlight:SetDimensions(GEAR_W, GEAR_H)
+        self.highlight:ClearAnchors()
         self.highlight:SetAnchor(TOPLEFT, self.root, TOPLEFT, 36, GEAR_Y + (position - 1) * GEAR_H)
         self.highlight:SetHidden(false)
     elseif self.column == 2 and cellFor[selected] then
         local n = cellFor[selected]
         self.highlight:SetDimensions(BUILD_W - 4, BUILD_H)
+        self.highlight:ClearAnchors()
         self.highlight:SetAnchor(TOPLEFT, self.root, TOPLEFT,
             BUILD_X + math.floor((n - 1) / BUILD_ROWS) * BUILD_W, BUILD_Y + ((n - 1) % BUILD_ROWS) * BUILD_H)
         self.highlight:SetHidden(false)
@@ -478,15 +488,24 @@ function U:Render()
     end
     local entry = entries[selected]
     local key = self.column .. ":" .. (entry and entry.key or "")
+    self:PlaceDetail(merged)
     local text = entry and entry.detail or "この項目に表示できる情報はありません。"
-    if key ~= self.detailKey or text ~= self.detailText then
+    local setText = entry and entry.detailSet
+    if key ~= self.detailKey or text ~= self.detailText or setText ~= self.detailSetText then
         if key ~= self.detailKey then self.detailOffset = 0 end
-        self.detailKey, self.detailText = key, text
+        self.detailKey, self.detailText, self.detailSetText = key, text, setText
         self.detail:SetText(text)
+        self.detail:SetWidth(setText and (DETAIL_SPLIT - 44 - 40) or 1880)
+        self.detailSet:SetText(setText or "")
+        self.detailSet:SetHidden(not setText)
     end
     local pages = self:DetailPages()
     self.detailOffset = math.min(self.detailOffset or 0, pages - 1)
-    self.detail:SetAnchor(TOPLEFT, self.detailScroll, TOPLEFT, 0, -self.detailOffset * self.detailPage)
+    local top = -self.detailOffset * self.detailPage
+    self.detail:ClearAnchors()
+    self.detail:SetAnchor(TOPLEFT, self.detailScroll, TOPLEFT, 0, top)
+    self.detailSet:ClearAnchors()
+    self.detailSet:SetAnchor(TOPLEFT, self.detailScroll, TOPLEFT, DETAIL_SPLIT - 44, top)
     local current = self.detailOffset + 1
     self.detailTitle:SetText((entry and (entry.name .. "   " .. entry.value) or "詳細") ..
         (pages > 1 and string.format("   （説明 %d/%d・L2/R2で続き）", current, pages) or ""))
@@ -502,11 +521,24 @@ function U:MoveRow(delta)
     self.selected[self.column] = math.max(1, math.min(#self.data[self.column], self.selected[self.column] + delta))
     self:Render()
 end
+function U:PlaceDetail(firstPage)
+    if self.detailFirstPage == firstPage then return end
+    self.detailFirstPage = firstPage
+    local spec = firstPage and DETAIL_PAGE1 or DETAIL_GRID
+    local function move(control, x, y) control:ClearAnchors(); control:SetAnchor(TOPLEFT, self.root, TOPLEFT, x, y) end
+    move(self.detailDivider, 36, spec[1])
+    move(self.detailTitle, 44, spec[1] + 6)
+    move(self.hint, 1160, spec[1] + 10)
+    move(self.detailScroll, 44, spec[2])
+    self.detailPage = math.max(1, math.floor(spec[3] / self.detailLine)) * self.detailLine
+    self.detailScroll:SetDimensions(1910, self.detailPage)
+end
+
 -- The text height is measured when it is needed, not right after SetText: the client lays text
 -- out a frame later, and a height read too early made every description one page long.
 function U:DetailPages()
     local height = self.detail:GetTextHeight()
-    self.detail:SetHeight(height)
+    if not self.detailSet:IsHidden() then height = math.max(height, self.detailSet:GetTextHeight()) end
     return math.max(1, math.ceil(height / self.detailPage))
 end
 

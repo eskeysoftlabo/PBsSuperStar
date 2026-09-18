@@ -4,7 +4,7 @@ Puts your character's equipment, detailed statistics, Champion Points and skills
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.2.14 (API 101050)
+- **Version:** 0.2.15 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
@@ -107,6 +107,22 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.2.15: the whole item description
+
+- **Why it was still cut off.** 0.2.14 fixed the description label's height to the value it
+  measured, on every refresh. A label with a fixed height reports text no taller than itself, so
+  a first measurement of one line — taken before the client had laid the text out — capped every
+  later one, and the description stayed one window long with nothing for L2/R2 to turn to. The
+  labels now keep a height of 0, which sizes a label to its text, and are only measured.
+- Every control that is moved after it is created is now cleared first (`ClearAnchors`). A second
+  `SetAnchor` adds an anchor rather than replacing the first, and two conflicting anchors distort
+  the control. The test harness now fails on any re-anchor without a clear.
+- The first page's rows are 30 points instead of 34, which gives its description pane 170 points
+  — about eight lines — instead of 96. Under the grid pages it is unchanged.
+- An item's description is two columns: the item on the left, its set on the right. The short
+  facts share one line, each set apart — `伝説　／　CP 160　／　状態 99%　／　防御 1500　／　中装` —
+  and the item name is not repeated, since it is the description's title.
 
 ## 0.2.14: set text, L2/R2, Class Mastery title
 
