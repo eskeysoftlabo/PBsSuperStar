@@ -1,4 +1,4 @@
-local P = PBsSuperStar
+local P = PBsUltraDetailedStats
 P.UI = { column = 1, selected = {1, 1, 1, 1, 1}, offsets = {0, 0, 0, 0, 0}, showAll = false }
 local U = P.UI
 local W, H = 2000, 1040
@@ -95,7 +95,7 @@ function U:BuildTasks()
     local root
     local function task(fn) self.buildTasks[#self.buildTasks + 1] = fn end
     task(function()
-        root = WINDOW_MANAGER:CreateTopLevelWindow("PBsSuperStarWindow")
+        root = WINDOW_MANAGER:CreateTopLevelWindow("PBsUltraDetailedStatsWindow")
         self.root = root
         root:SetDimensions(W, H)
         root:SetAnchor(CENTER, GuiRoot, CENTER, 0, -34)
@@ -248,7 +248,7 @@ function U:BuildTasks()
         -- it by exactly one window, so no line is ever drawn cut in half. The labels keep a height
         -- of 0, which sizes them to their text: fixing the height to a measured value capped every
         -- later measurement at that value, and a first measurement of one line stuck for good.
-        self.detailScroll = WINDOW_MANAGER:CreateControl("PBsSuperStarDetailScroll", root, CT_SCROLL)
+        self.detailScroll = WINDOW_MANAGER:CreateControl("PBsUltraDetailedStatsDetailScroll", root, CT_SCROLL)
         self.detail = label(self.detailScroll, 0, 0, 1880, 0, 16)
         -- Equipment puts its set in a second column beside the item.
         self.detailSet = label(self.detailScroll, DETAIL_SPLIT - 44, 0, 1880 - (DETAIL_SPLIT - 44), 0, 16)
@@ -279,7 +279,7 @@ function U:BeginCreate(onReady)
         local ok, message = pcall(self.buildTasks[self.buildIndex])
         if not ok then
             self:PauseCreate()
-            self.buildError = "PBsSuperStar UI initialization failed: " .. tostring(message)
+            self.buildError = "PBsUltraDetailedStats UI initialization failed: " .. tostring(message)
             error(self.buildError)
         end
         self.buildIndex = self.buildIndex + 1

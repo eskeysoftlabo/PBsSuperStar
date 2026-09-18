@@ -1,4 +1,4 @@
-local P = PBsSuperStar
+local P = PBsUltraDetailedStats
 
 function P:Open()
     SCENE_MANAGER:Push(self.sceneName)
@@ -90,7 +90,7 @@ function P:Initialize()
     EVENT_MANAGER:RegisterForEvent(self.name, EVENT_PLAYER_ACTIVATED, function() self:InstallMenu() end)
     EVENT_MANAGER:RegisterForEvent(self.name, EVENT_SCREEN_RESIZED, function() U:Resize() end)
     -- Development convenience on PC. Console entry point is the gamepad main menu.
-    SLASH_COMMANDS["/pbss"] = function() self:Open() end
+    SLASH_COMMANDS["/pbuds"] = function() self:Open() end
 end
 
 EVENT_MANAGER:RegisterForEvent(P.name, EVENT_ADD_ON_LOADED, function(_, addonName)

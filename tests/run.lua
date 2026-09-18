@@ -118,7 +118,7 @@ function GetUnitChampionPoints() return 1600 end
 function GetUnitTitle() return "Title" end
 
 dofile("Data.lua")
-local D = PBsSuperStar.Data
+local D = PBsUltraDetailedStats.Data
 local function find(rows, key)
     for _, r in ipairs(rows) do if r.key == key then return r end end
 end
@@ -250,7 +250,7 @@ GuiRoot = control(); GuiRoot:SetDimensions(1920, 1080)
 TOPLEFT, CENTER, CT_LABEL, CT_BACKDROP, CT_TEXTURE, CT_SCROLL = 1, 2, 3, 4, 5, 6
 TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER, TEXT_WRAP_MODE_ELLIPSIS, KEYBIND_STRIP_ALIGN_LEFT = 1, 2, 1, 1
 dofile("UI.lua")
-local U = PBsSuperStar.UI
+local U = PBsUltraDetailedStats.UI
 U:Create(); U:Refresh()
 eq(#U.gear, 17, "every equipment slot has a row of its own")
 eq(#U.cells, 224)
@@ -384,59 +384,59 @@ KEYBIND_STRIP = {AddKeybindButtonGroup = function() binds = binds + 1 end, Remov
     style = GAMEPAD_STRIP, GetStyle = function(self) return self.style end, SetStyle = function(self, style) self.style = style end}
 ZO_KeybindStripGamepadBackground = control(); ZO_KeybindStripGamepadBackground:SetDimensions(1920, 90)
 SLASH_COMMANDS = {}
-SCENE_MANAGER = {Push = function(_, name) eq(name, "pbsSuperStar") end}
+SCENE_MANAGER = {Push = function(_, name) eq(name, "pbsUltraDetailedStats") end}
 -- A fresh UI must stay unallocated at addon load, including without coroutines.
 coroutine = nil
 dofile("UI.lua")
-U = PBsSuperStar.UI
+U = PBsUltraDetailedStats.UI
 local controlsCreated = 0
 WINDOW_MANAGER.CreateControl = function() controlsCreated = controlsCreated + 1; return control() end
 WINDOW_MANAGER.CreateTopLevelWindow = WINDOW_MANAGER.CreateControl
-dofile("PBsSuperStar.lua")
-events.PBsSuperStar1(nil, "DifferentAddon"); eq(#ZO_MENU_ENTRIES, 0)
-events.PBsSuperStar1(nil, "PBsSuperStar"); eq(#ZO_MENU_ENTRIES, 1)
+dofile("PBsUltraDetailedStats.lua")
+events.PBsUltraDetailedStats1(nil, "DifferentAddon"); eq(#ZO_MENU_ENTRIES, 0)
+events.PBsUltraDetailedStats1(nil, "PBsUltraDetailedStats"); eq(#ZO_MENU_ENTRIES, 1)
 eq(ZO_MENU_ENTRIES[1].name, "ステータス超詳細")
-PBsSuperStar:InstallMenu(); eq(#ZO_MENU_ENTRIES, 1)
+PBsUltraDetailedStats:InstallMenu(); eq(#ZO_MENU_ENTRIES, 1)
 eq(controlsCreated, 0, "addon load must not create dashboard controls")
-events.PBsSuperStar3(); eq(controlsCreated, 0, "resize before first open")
-PBsSuperStar:Open()
-PBsSuperStar.scene.changed(nil, SCENE_SHOWING)
+events.PBsUltraDetailedStats3(); eq(controlsCreated, 0, "resize before first open")
+PBsUltraDetailedStats:Open()
+PBsUltraDetailedStats.scene.changed(nil, SCENE_SHOWING)
 -- The keybind strip is shorter and lower while the screen is open, and restored after.
 eq(KEYBIND_STRIP.style.yAnchorOffset, -23, "strip moved down")
 eq(KEYBIND_STRIP.style.nameFont, "ZoFontGamepad27", "strip labels smaller")
 eq(KEYBIND_STRIP.style.keyFont, "ZoFontGamepad22", "everything else about the style is kept")
 eq(ZO_KeybindStripGamepadBackground.height, 60, "strip background shorter")
 eq(controlsCreated, 0, "show event must defer construction")
-eq(updates.PBsSuperStarRefresh, nil)
+eq(updates.PBsUltraDetailedStatsRefresh, nil)
 U:MoveRow(1); U:MoveColumn(1); U:MoveGridColumn(1); U:Refresh()
-updates.PBsSuperStarBuildUI()
+updates.PBsUltraDetailedStatsBuildUI()
 assert(controlsCreated > 0 and not U.ready)
-PBsSuperStar.scene.changed(nil, SCENE_HIDING)
+PBsUltraDetailedStats.scene.changed(nil, SCENE_HIDING)
 eq(KEYBIND_STRIP.style, GAMEPAD_STRIP, "the game's own style comes back on close")
 eq(ZO_KeybindStripGamepadBackground.height, 90)
-eq(updates.PBsSuperStarBuildUI, nil, "close pauses construction")
-eq(updates.PBsSuperStarRefresh, nil)
+eq(updates.PBsUltraDetailedStatsBuildUI, nil, "close pauses construction")
+eq(updates.PBsUltraDetailedStatsRefresh, nil)
 eq(binds, 0)
-PBsSuperStar.scene.changed(nil, SCENE_SHOWING)
+PBsUltraDetailedStats.scene.changed(nil, SCENE_SHOWING)
 local frameCount = 0
-while updates.PBsSuperStarBuildUI do
+while updates.PBsUltraDetailedStatsBuildUI do
     local before = controlsCreated
-    updates.PBsSuperStarBuildUI()
+    updates.PBsUltraDetailedStatsBuildUI()
     assert(controlsCreated - before <= 20, "construction stage exceeded control limit")
     frameCount = frameCount + 1
     assert(frameCount < 100, "construction did not complete")
 end
 assert(frameCount > 1 and U.ready)
-assert(updates.PBsSuperStarRefresh)
+assert(updates.PBsUltraDetailedStatsRefresh)
 eq(#U.gear, 17, "all gear rows constructed after resuming")
 eq(#U.cells, 224)
-PBsSuperStar.scene.changed(nil, SCENE_HIDING)
+PBsUltraDetailedStats.scene.changed(nil, SCENE_HIDING)
 local finishedCount = controlsCreated
 for _ = 1, 2 do
-    PBsSuperStar.scene.changed(nil, SCENE_SHOWING); eq(binds, 1)
-    assert(updates.PBsSuperStarRefresh)
-    PBsSuperStar.scene.changed(nil, SCENE_HIDING); eq(binds, 0)
-    eq(updates.PBsSuperStarRefresh, nil)
+    PBsUltraDetailedStats.scene.changed(nil, SCENE_SHOWING); eq(binds, 1)
+    assert(updates.PBsUltraDetailedStatsRefresh)
+    PBsUltraDetailedStats.scene.changed(nil, SCENE_HIDING); eq(binds, 0)
+    eq(updates.PBsUltraDetailedStatsRefresh, nil)
 end
 eq(controlsCreated, finishedCount, "reopening reuses existing controls")
 print("PASS: " .. checks .. " checks (data, navigation, scene lifecycle, menu)")

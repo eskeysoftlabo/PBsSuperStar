@@ -1,5 +1,5 @@
-PBsSuperStar = { name = "PBsSuperStar", sceneName = "pbsSuperStar", title = "PB'S SUPERSTAR" }
-local P = PBsSuperStar
+PBsUltraDetailedStats = { name = "PBsUltraDetailedStats", sceneName = "pbsUltraDetailedStats", title = "PB'S ULTRA DETAILED STATS" }
+local P = PBsUltraDetailedStats
 P.Data = {}
 local D = P.Data
 

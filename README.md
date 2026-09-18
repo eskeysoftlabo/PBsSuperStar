@@ -1,13 +1,14 @@
-# PB’s SuperStar
+# PB’s UltraDetailedStats
 
 Puts your character's equipment, detailed statistics, Champion Points and skills on one screen,
 in the gamepad UI of **The Elder Scrolls Online** on console (PS5 / Xbox Series X|S).
 
 - **Author:** PinkBanther
-- **Version:** 0.2.15 (API 101050)
+- **Version:** 0.3.0 (API 101050)
 - **Libraries:** none
 
 Open it from **ステータス超詳細** in the gamepad main menu, between **Character** and **Skills**.
+The add-on's name is that menu entry in English: 超詳細ステータス, ultra-detailed stats.
 
 > **The in-game text is Japanese.** The screen, the menu entry and every label are written in
 > Japanese only; there is no English locale yet.
@@ -97,9 +98,9 @@ for that. A skill's earned state and its line's active state are shown separatel
 
 ## Setup
 
-On PC, put `PBsSuperStar.addon`, `Data.lua`, `UI.lua` and `PBsSuperStar.lua` in
-`AddOns/PBsSuperStar/`. The manifest is the same `.addon` format as the other PB add-ons; do
-not ship the old `PBsSuperStar.txt` alongside it, and keep it out of the zip. `/pbss` opens the
+On PC, put `PBsUltraDetailedStats.addon`, `Data.lua`, `UI.lua` and `PBsUltraDetailedStats.lua` in
+`AddOns/PBsUltraDetailedStats/`. The manifest is the same `.addon` format as the other PB add-ons; do
+not ship the old `PBsUltraDetailedStats.txt` alongside it, and keep it out of the zip. `/pbuds` opens the
 screen on PC, for testing.
 
 **Creating the files locally does not install anything on a console.** Console distribution
@@ -107,6 +108,16 @@ goes through Bethesda's developer Uploader — build a candidate with `python3 t
 then follow the console development environment and the Uploader's instructions. Nothing here
 has been uploaded or published. See the
 [official console Uploader notes](https://help.elderscrollsonline.com/app/answers/detail/a_id/69621/).
+
+## 0.3.0: renamed to PB’s UltraDetailedStats
+
+The add-on was PB’s SuperStar, after the original SuperStar it takes its layout from. It is now
+**PB’s UltraDetailedStats**, the English for its menu entry, 超詳細ステータス. Everything that
+carried the old name changed with it: the folder and manifest (`PBsUltraDetailedStats.addon`), the
+global table, the scene, the window's controls, the title on screen
+(`PB'S ULTRA DETAILED STATS`), the upload zip, and the PC test command, now `/pbuds`. Nothing was
+ever published under the old name, so there is no installed copy or saved data to carry over.
+The original SuperStar in `SuperStar/` is still kept, as reference only.
 
 ## 0.2.15: the whole item description
 
@@ -262,8 +273,8 @@ console has not been confirmed.**
 | --- | --- |
 | `Data.lua` | reads the API |
 | `UI.lua` | draws the screen and handles input |
-| `PBsSuperStar.lua` | initialisation, the scene and the menu entry |
-| `PBsSuperStar.addon` | the manifest |
+| `PBsUltraDetailedStats.lua` | initialisation, the scene and the menu entry |
+| `PBsUltraDetailedStats.addon` | the manifest |
 | `tests/run.lua` | the offline test harness |
 | `tools/package.py` | builds the upload candidate zip |
 | `SuperStar/` | the original SuperStar, kept for reference only |
@@ -274,7 +285,7 @@ or distributed here.
 ## Tests
 
 ```sh
-luac -p Data.lua UI.lua PBsSuperStar.lua
+luac -p Data.lua UI.lua PBsUltraDetailedStats.lua
 lua tests/run.lua
 python3 tools/package.py
 ```
